@@ -1,8 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { EXPORT_FORMATS } from "@/lib/data";
+import { downloadExport } from "@/lib/utils";
 
 export function ReportsTab() {
+  const [exporting, setExporting] = useState<string | null>(null);
+
+  const handleExport = async (format: string) => {
+    setExporting(format);
+    try {
+      await downloadExport(format);
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExporting(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -15,14 +30,15 @@ export function ReportsTab() {
           <p className="text-xs text-slate-400 mb-4">Xuất báo cáo đánh giá bảo mật với 203 tiêu chí theo nhiều định dạng.</p>
           <div className="grid grid-cols-3 gap-2">
             {EXPORT_FORMATS.map((fmt) => (
-              <a
+              <button
                 key={fmt.format}
-                href={`/api/export?format=${fmt.format}`}
-                className="flex flex-col items-center gap-1 p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors"
+                onClick={() => handleExport(fmt.format)}
+                disabled={exporting === fmt.format}
+                className="flex flex-col items-center gap-1 p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors disabled:opacity-50"
               >
-                <span className="text-2xl">{fmt.icon}</span>
+                <span className="text-2xl">{exporting === fmt.format ? "⏳" : fmt.icon}</span>
                 <span className="text-xs text-slate-300">{fmt.label}</span>
-              </a>
+              </button>
             ))}
           </div>
         </div>

@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { TABS, DOMAINS, CRITERIA, EXPORT_FORMATS } from "@/lib/data";
 import { THREATS, NOTIFICATIONS } from "@/lib/sample-data";
+import { downloadExport } from "@/lib/utils";
 import type { TabId } from "@/lib/types";
 
 interface LeftSidebarProps {
@@ -23,6 +25,18 @@ export function LeftSidebar({
 }: LeftSidebarProps) {
   const unreadCount = NOTIFICATIONS.filter((n) => !n.read).length;
   const criticalThreats = THREATS.filter((t) => t.severity === "critical").length;
+  const [exporting, setExporting] = useState<string | null>(null);
+
+  const handleExport = async (format: string) => {
+    setExporting(format);
+    try {
+      await downloadExport(format);
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExporting(null);
+    }
+  };
 
   return (
     <aside className="w-64 bg-slate-900 border-r border-slate-700 flex flex-col h-screen overflow-y-auto">
@@ -94,15 +108,16 @@ export function LeftSidebar({
         <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Xuất báo cáo</p>
         <div className="grid grid-cols-3 gap-1">
           {EXPORT_FORMATS.map((fmt) => (
-            <a
+            <button
               key={fmt.format}
-              href={`/api/export?format=${fmt.format}`}
-              className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors"
+              onClick={() => handleExport(fmt.format)}
+              disabled={exporting === fmt.format}
+              className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors disabled:opacity-50"
               title={`Xuất ${fmt.label}`}
             >
-              <span>{fmt.icon}</span>
+              <span>{exporting === fmt.format ? "⏳" : fmt.icon}</span>
               <span>{fmt.label}</span>
-            </a>
+            </button>
           ))}
         </div>
       </div>

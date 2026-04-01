@@ -1,5 +1,10 @@
 import type { Assessment, AssessmentResult, SecurityCriterion, SecurityDomain } from "./types";
 
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed * 9301 + 49297) * 49297;
+  return x - Math.floor(x);
+}
+
 export function calculateOverallScore(results: AssessmentResult[]): number {
   if (results.length === 0) return 0;
   const total = results.reduce((sum, r) => sum + r.score, 0);
@@ -48,29 +53,40 @@ export function exportToJSON(assessment: Assessment): string {
 }
 
 export function exportToCSV(assessment: Assessment, criteria: SecurityCriterion[]): string {
-  const header = "ID,Code,Name,Name_Vi,Score,Status,Notes\n";
+  const header = "ID,Code,Name,Name_Vi,Risk_Level,Score,Status,ISO_27001,SOC2,Notes\n";
   const rows = assessment.results.map((r) => {
     const c = criteria.find((cr) => cr.id === r.criterionId);
     if (!c) return "";
-    return `"${c.id}","${c.code}","${c.name}","${c.nameVi}",${r.score},"${r.status}","${r.notes}"`;
+    return `"${c.id}","${c.code}","${c.name}","${c.nameVi}","${c.riskLevel}",${r.score},"${r.status}","${c.iso27001Control || ""}","${c.soc2Criteria || ""}","${r.notes}"`;
   }).join("\n");
   return header + rows;
 }
 
 export function exportToTXT(assessment: Assessment, criteria: SecurityCriterion[]): string {
-  let txt = `Security Assessment Report\n`;
-  txt += `========================\n`;
-  txt += `Name: ${assessment.name}\n`;
-  txt += `Date: ${assessment.createdAt}\n`;
-  txt += `Overall Score: ${assessment.overallScore}%\n\n`;
-  txt += `Criteria Results:\n`;
-  txt += `-----------------\n`;
+  let txt = `BAO CAO DANH GIA BAO MAT\n`;
+  txt += `========================\n\n`;
+  txt += `Ten: ${assessment.name}\n`;
+  txt += `Ngay: ${assessment.createdAt}\n`;
+  txt += `Diem tong: ${assessment.overallScore}%\n`;
+  txt += `Tieu chi: ${criteria.length}\n\n`;
+  txt += `KET QA DANH GIA:\n`;
+  txt += `${"=".repeat(60)}\n\n`;
+
   for (const r of assessment.results) {
     const c = criteria.find((cr) => cr.id === r.criterionId);
     if (!c) continue;
-    txt += `[${r.score}/5] ${c.code} - ${c.nameVi} (${r.status})\n`;
-    if (r.notes) txt += `    Notes: ${r.notes}\n`;
+    const scoreBar = "█".repeat(r.score) + "░".repeat(5 - r.score);
+    txt += `[${r.score}/5 ${scoreBar}] ${c.code}\n`;
+    txt += `  ${c.nameVi}\n`;
+    txt += `  Muc do: ${c.riskLevel.toUpperCase()} | Trang thai: ${r.status}\n`;
+    if (c.iso27001Control) txt += `  ISO 27001: ${c.iso27001Control}\n`;
+    if (c.soc2Criteria) txt += `  SOC 2: ${c.soc2Criteria}\n`;
+    if (r.notes) txt += `  Ghi chu: ${r.notes}\n`;
+    txt += `\n`;
   }
+
+  txt += `\n${"=".repeat(60)}\n`;
+  txt += `Tong ket: ${assessment.overallScore}%\n`;
   return txt;
 }
 
@@ -79,54 +95,120 @@ export function exportToHTML(assessment: Assessment, criteria: SecurityCriterion
     const c = criteria.find((cr) => cr.id === r.criterionId);
     if (!c) return "";
     const color = r.score >= 4 ? "#22c55e" : r.score >= 2 ? "#eab308" : "#ef4444";
+    const riskBadge = c.riskLevel === "critical" ? "background:#ef4444;color:#fff" :
+      c.riskLevel === "high" ? "background:#f97316;color:#fff" :
+      c.riskLevel === "medium" ? "background:#eab308;color:#000" :
+      "background:#3b82f6;color:#fff";
     return `<tr>
-      <td>${c.code}</td>
+      <td style="font-family:monospace;font-size:12px">${c.code}</td>
       <td>${c.nameVi}</td>
-      <td style="color:${color};font-weight:bold">${r.score}/5</td>
-      <td>${r.status}</td>
+      <td><span style="${riskBadge};padding:2px 8px;border-radius:4px;font-size:11px">${c.riskLevel}</span></td>
+      <td style="color:${color};font-weight:bold;text-align:center">${r.score}/5</td>
+      <td style="text-align:center">${r.status}</td>
+      <td>${c.iso27001Control || "-"}</td>
       <td>${r.notes}</td>
     </tr>`;
   }).join("\n");
 
   return `<!DOCTYPE html>
 <html lang="vi">
-<head><meta charset="UTF-8"><title>Báo cáo đánh giá bảo mật</title>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bao cao danh gia bao mat - ${assessment.name}</title>
 <style>
-body{font-family:system-ui;max-width:1200px;margin:0 auto;padding:20px;background:#0f172a;color:#e2e8f0}
-h1{color:#38bdf8}table{width:100%;border-collapse:collapse;margin-top:20px}
-th,td{padding:10px;border:1px solid #334155;text-align:left}
-th{background:#1e293b}tr:nth-child(even){background:#1e293b}
-.score{font-size:24px;font-weight:bold}
-</style></head>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;padding:24px}
+.container{max-width:1400px;margin:0 auto}
+h1{color:#38bdf8;font-size:28px;margin-bottom:4px}
+h2{color:#94a3b8;font-size:16px;font-weight:normal;margin-bottom:24px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}
+.score-box{text-align:right}
+.score-value{font-size:48px;font-weight:bold;color:${assessment.overallScore >= 70 ? "#22c55e" : assessment.overallScore >= 50 ? "#eab308" : "#ef4444"}}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.stat{background:#1e293b;padding:16px;border-radius:8px;border:1px solid #334155}
+.stat-label{font-size:12px;color:#94a3b8;text-transform:uppercase}
+.stat-value{font-size:24px;font-weight:bold;margin-top:4px}
+table{width:100%;border-collapse:collapse;background:#1e293b;border-radius:8px;overflow:hidden}
+th{background:#0f172a;padding:12px;text-align:left;font-size:12px;text-transform:uppercase;color:#94a3b8;border-bottom:2px solid #334155}
+td{padding:10px 12px;border-bottom:1px solid #1e293b;font-size:13px}
+tr:hover{background:#1e294b}
+.footer{margin-top:32px;text-align:center;color:#475569;font-size:12px}
+</style>
+</head>
 <body>
-<h1>Báo Cáo Đánh Giá Bảo Mật</h1>
-<p>Tên: ${assessment.name} | Ngày: ${assessment.createdAt}</p>
-<p class="score">Điểm tổng: ${assessment.overallScore}%</p>
-<table><thead><tr><th>Mã</th><th>Tiêu chí</th><th>Điểm</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
-<tbody>${rows}</tbody></table>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>Bao Cao Danh Gia Bao Mat</h1>
+      <h2>${assessment.name} | ${new Date(assessment.createdAt).toLocaleDateString("vi-VN")}</h2>
+    </div>
+    <div class="score-box">
+      <div class="score-value">${assessment.overallScore}%</div>
+      <div style="color:#94a3b8;font-size:12px">Diem tong</div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Tieu chi</div><div class="stat-value">${criteria.length}</div></div>
+    <div class="stat"><div class="stat-label">Da danh gia</div><div class="stat-value">${assessment.results.filter(r => r.status !== "not-assessed").length}</div></div>
+    <div class="stat"><div class="stat-label">Dat yeu cau</div><div class="stat-value" style="color:#22c55e">${assessment.results.filter(r => r.status === "compliant").length}</div></div>
+    <div class="stat"><div class="stat-label">Chua dat</div><div class="stat-value" style="color:#ef4444">${assessment.results.filter(r => r.status === "non-compliant").length}</div></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Ma</th><th>Tieu chi</th><th>Risk</th><th>Diem</th><th>Trang thai</th><th>ISO 27001</th><th>Ghi chu</th></tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <div class="footer">
+    <p>He thong danh gia bao mat - ${new Date().toLocaleString("vi-VN")}</p>
+  </div>
+</div>
 </body></html>`;
 }
 
 export function generateSampleAssessment(criteria: SecurityCriterion[]): Assessment {
-  const results: AssessmentResult[] = criteria.map((c) => {
-    const score = Math.floor(Math.random() * 6) as 0 | 1 | 2 | 3 | 4 | 5;
+  const results: AssessmentResult[] = criteria.map((c, i) => {
+    const rand = seededRandom(i + 1);
+    const score = Math.floor(rand * 6) as 0 | 1 | 2 | 3 | 4 | 5;
     return {
       criterionId: c.id,
       score,
       status: score >= 4 ? "compliant" : score >= 2 ? "partial" : score >= 1 ? "non-compliant" : "not-assessed",
-      notes: score < 3 ? "Cần cải thiện" : "",
-      assessedAt: new Date().toISOString(),
+      notes: score < 3 ? "Can cai thien" : "",
+      assessedAt: "2026-04-01T08:00:00Z",
       assessedBy: "System",
     };
   });
 
   return {
     id: "ASSESS-001",
-    name: "Đánh giá bảo mật Q1 2026",
+    name: "Danh gia bao mat Q1 2026",
     createdAt: "2026-04-01T00:00:00Z",
-    updatedAt: new Date().toISOString(),
+    updatedAt: "2026-04-01T08:00:00Z",
     results,
     overallScore: calculateOverallScore(results),
     domainScores: {},
   };
+}
+
+export async function downloadExport(format: string): Promise<void> {
+  const res = await fetch(`/api/export?format=${format}`);
+  if (!res.ok) throw new Error(`Export failed: ${res.statusText}`);
+
+  const contentType = res.headers.get("Content-Type") || "";
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+
+  const ext = format === "excel" ? "csv" : format;
+  a.download = `bao-cao-bao-mat.${ext}`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
