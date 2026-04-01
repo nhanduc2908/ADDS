@@ -3,14 +3,15 @@
 import { useState } from "react";
 import { EXPORT_FORMATS } from "@/lib/data";
 import { downloadExport } from "@/lib/utils";
+import type { Assessment } from "@/lib/types";
 
-export function ReportsTab() {
+export function ReportsTab({ assessment }: { assessment: Assessment }) {
   const [exporting, setExporting] = useState<string | null>(null);
 
   const handleExport = async (format: string) => {
     setExporting(format);
     try {
-      await downloadExport(format);
+      await downloadExport(format, assessment);
     } catch (err) {
       console.error("Export failed:", err);
     } finally {

@@ -78,7 +78,7 @@ export default function SecurityDashboard() {
       case "notifications":
         return <NotificationsTab />;
       case "reports":
-        return <ReportsTab />;
+        return <ReportsTab assessment={assessment} />;
       case "compare":
         return <CompareTab />;
       case "settings":
@@ -99,6 +99,7 @@ export default function SecurityDashboard() {
         onSearchChange={setSearchQuery}
         selectedDomain={selectedDomain}
         onDomainChange={setSelectedDomain}
+        assessment={assessment}
       />
       <main className="flex-1 overflow-y-auto p-6">
         {renderTab()}

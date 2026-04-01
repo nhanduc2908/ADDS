@@ -4,7 +4,7 @@ import { useState } from "react";
 import { TABS, DOMAINS, CRITERIA, EXPORT_FORMATS } from "@/lib/data";
 import { THREATS, NOTIFICATIONS } from "@/lib/sample-data";
 import { downloadExport } from "@/lib/utils";
-import type { TabId } from "@/lib/types";
+import type { Assessment, TabId } from "@/lib/types";
 
 interface LeftSidebarProps {
   activeTab: TabId;
@@ -13,6 +13,7 @@ interface LeftSidebarProps {
   onSearchChange: (query: string) => void;
   selectedDomain: string;
   onDomainChange: (domainId: string) => void;
+  assessment: Assessment;
 }
 
 export function LeftSidebar({
@@ -22,6 +23,7 @@ export function LeftSidebar({
   onSearchChange,
   selectedDomain,
   onDomainChange,
+  assessment,
 }: LeftSidebarProps) {
   const unreadCount = NOTIFICATIONS.filter((n) => !n.read).length;
   const criticalThreats = THREATS.filter((t) => t.severity === "critical").length;
@@ -30,7 +32,7 @@ export function LeftSidebar({
   const handleExport = async (format: string) => {
     setExporting(format);
     try {
-      await downloadExport(format);
+      await downloadExport(format, assessment);
     } catch (err) {
       console.error("Export failed:", err);
     } finally {

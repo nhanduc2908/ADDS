@@ -1,4 +1,5 @@
 import type { Assessment, AssessmentResult, SecurityCriterion, SecurityDomain } from "./types";
+import { CRITERIA } from "./data";
 
 function seededRandom(seed: number): number {
   const x = Math.sin(seed * 9301 + 49297) * 49297;
@@ -195,16 +196,54 @@ export function generateSampleAssessment(criteria: SecurityCriterion[]): Assessm
   };
 }
 
-export async function downloadExport(format: string): Promise<void> {
+export async function downloadExport(format: string, assessment?: Assessment): Promise<void> {
+  const mimeTypes: Record<string, string> = {
+    json: "application/json",
+    csv: "text/csv",
+    excel: "text/csv",
+    txt: "text/plain",
+    html: "text/html",
+  };
+
+  if (assessment) {
+    let content: string;
+    let ext = format;
+    switch (format) {
+      case "json":
+        content = exportToJSON(assessment);
+        break;
+      case "csv":
+      case "excel":
+        content = exportToCSV(assessment, CRITERIA);
+        ext = "csv";
+        break;
+      case "txt":
+        content = exportToTXT(assessment, CRITERIA);
+        break;
+      case "html":
+        content = exportToHTML(assessment, CRITERIA);
+        break;
+      default:
+        content = exportToJSON(assessment);
+    }
+    const blob = new Blob([content], { type: mimeTypes[format] || "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bao-cao-bao-mat-${assessment.id}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return;
+  }
+
   const res = await fetch(`/api/export?format=${format}`);
   if (!res.ok) throw new Error(`Export failed: ${res.statusText}`);
-
-  const contentType = res.headers.get("Content-Type") || "";
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-
   const ext = format === "excel" ? "csv" : format;
   a.download = `bao-cao-bao-mat.${ext}`;
   document.body.appendChild(a);
