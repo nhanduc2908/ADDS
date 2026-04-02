@@ -2,13 +2,14 @@
 
 import { DOMAINS, CRITERIA } from "@/lib/data";
 import { THREATS, DEVICES, NOTIFICATIONS } from "@/lib/sample-data";
-import type { Assessment } from "@/lib/types";
+import type { Assessment, AssessmentFile } from "@/lib/types";
 
 interface RightSidebarProps {
   assessment: Assessment | null;
+  activeFile: AssessmentFile | null;
 }
 
-export function RightSidebar({ assessment }: RightSidebarProps) {
+export function RightSidebar({ assessment, activeFile }: RightSidebarProps) {
   const overallScore = assessment?.overallScore ?? 0;
   const scoreColor =
     overallScore >= 80 ? "text-green-400" : overallScore >= 60 ? "text-yellow-400" : overallScore >= 40 ? "text-orange-400" : "text-red-400";
@@ -23,6 +24,22 @@ export function RightSidebar({ assessment }: RightSidebarProps) {
 
   return (
     <aside className="w-72 bg-slate-900 border-l border-slate-700 flex flex-col h-screen overflow-y-auto">
+      {activeFile && (
+        <div className="p-3 border-b border-slate-700 bg-slate-800/50">
+          <p className="text-xs text-slate-400">Hệ thống đang đánh giá</p>
+          <p className="text-sm font-semibold text-cyan-400 truncate">{activeFile.systemName}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className={`text-xs px-1.5 py-0.5 rounded ${
+              activeFile.status === "completed" ? "bg-green-500/20 text-green-400" :
+              activeFile.status === "in-progress" ? "bg-yellow-500/20 text-yellow-400" :
+              "bg-slate-500/20 text-slate-400"
+            }`}>
+              {activeFile.status === "completed" ? "Hoàn thành" : activeFile.status === "in-progress" ? "Đang đánh giá" : "Nháp"}
+            </span>
+            <span className="text-xs text-slate-500">{activeFile.tags.map(t => `#${t}`).join(" ")}</span>
+          </div>
+        </div>
+      )}
       <div className={`p-4 border-b border-slate-700 bg-gradient-to-b ${scoreBg} to-transparent`}>
         <p className="text-xs text-slate-400 uppercase tracking-wider">Điểm bảo mật tổng thể</p>
         <div className="flex items-end gap-2 mt-2">

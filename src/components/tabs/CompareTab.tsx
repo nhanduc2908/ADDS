@@ -1,27 +1,41 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { DOMAINS } from "@/lib/data";
+import type { AssessmentFile } from "@/lib/types";
 
-function seededValue(seed: number, min: number, range: number): number {
-  return Math.round(((Math.sin(seed * 9301 + 49297) * 49297) % 1 + 1) % 1 * range + min);
-}
+export function CompareTab({ files }: { files: AssessmentFile[] }) {
+  const [idx1, setIdx1] = useState(0);
+  const [idx2, setIdx2] = useState(files.length > 1 ? 1 : 0);
 
-export function CompareTab() {
-  const assessments = [
-    { id: "Q1-2026", name: "Q1 2026", date: "01/04/2026", overall: 72 },
-    { id: "Q4-2025", name: "Q4 2025", date: "01/01/2026", overall: 65 },
-    { id: "Q3-2025", name: "Q3 2025", date: "01/10/2025", overall: 58 },
-  ];
+  const file1 = files[idx1] || null;
+  const file2 = files[idx2] || null;
 
-  const [selected1, selected2] = [assessments[0], assessments[1]];
-  const diff = selected1.overall - selected2.overall;
+  const score1 = file1?.assessment.overallScore ?? 0;
+  const score2 = file2?.assessment.overallScore ?? 0;
+  const diff = score1 - score2;
 
-  const domainComparisons = useMemo(() => DOMAINS.slice(0, 10).map((d, i) => {
-    const s1 = seededValue(i + 1, 55, 40);
-    const s2 = seededValue(i + 20, 50, 40);
-    return { ...d, s1, s2, dDiff: s1 - s2 };
-  }), []);
+  const domainComparisons = useMemo(() => {
+    if (!file1 || !file2) return [];
+    return DOMAINS.map((d) => {
+      const s1 = file1.assessment.domainScores[d.id] ?? 0;
+      const s2 = file2.assessment.domainScores[d.id] ?? 0;
+      return { ...d, s1, s2, dDiff: s1 - s2 };
+    });
+  }, [file1, file2]);
+
+  if (files.length < 2) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-lg font-semibold text-slate-200">So sánh đánh giá</h2>
+        <div className="text-center py-12 bg-slate-800/30 rounded-xl border border-slate-700">
+          <p className="text-4xl mb-3">⚖️</p>
+          <p className="text-slate-400 text-sm">Cần ít nhất 2 file đánh giá để so sánh</p>
+          <p className="text-slate-500 text-xs mt-1">Tạo thêm file trong tab Quản lý file</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -29,65 +43,103 @@ export function CompareTab() {
         <h2 className="text-lg font-semibold text-slate-200">So sánh đánh giá</h2>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {assessments.map((a) => (
-          <div key={a.id} className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-            <h3 className="text-sm font-semibold text-slate-200">{a.name}</h3>
-            <p className="text-xs text-slate-500">{a.date}</p>
-            <p className={`text-3xl font-bold mt-2 ${a.overall >= 70 ? "text-green-400" : a.overall >= 50 ? "text-yellow-400" : "text-red-400"}`}>
-              {a.overall}%
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-        <h3 className="text-sm font-semibold text-slate-200 mb-4">
-          So sánh {selected1.name} vs {selected2.name}
-        </h3>
-        <div className="flex items-center gap-4 mb-4 p-3 rounded-lg bg-slate-800">
-          <div>
-            <p className="text-xs text-slate-400">Thay đổi tổng thể</p>
-            <p className={`text-2xl font-bold ${diff >= 0 ? "text-green-400" : "text-red-400"}`}>
-              {diff >= 0 ? "+" : ""}{diff}%
-            </p>
-          </div>
-          <div className="flex-1">
-            <div className="h-4 bg-slate-700 rounded-full overflow-hidden relative">
-              <div className="absolute h-full bg-green-500/30 rounded-full" style={{ width: `${selected1.overall}%` }} />
-              <div className="absolute h-full bg-yellow-500/50 rounded-full border-r-2 border-yellow-400" style={{ width: `${selected2.overall}%` }} />
-            </div>
-            <div className="flex justify-between text-xs mt-1">
-              <span className="text-green-400">{selected1.name}: {selected1.overall}%</span>
-              <span className="text-yellow-400">{selected2.name}: {selected2.overall}%</span>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+          <label className="text-xs text-slate-400 block mb-1">Hệ thống 1</label>
+          <select
+            value={idx1}
+            onChange={(e) => setIdx1(Number(e.target.value))}
+            className="w-full bg-slate-800 text-slate-200 text-sm rounded-lg px-3 py-2 border border-slate-600 focus:border-cyan-500 focus:outline-none"
+          >
+            {files.map((f, i) => (
+              <option key={f.id} value={i}>{f.systemName} ({f.assessment.overallScore}%)</option>
+            ))}
+          </select>
         </div>
-
-        <div className="space-y-2">
-          {domainComparisons.map((dc) => (
-            <div key={dc.id} className="flex items-center gap-2">
-              <span className="text-sm w-6">{dc.icon}</span>
-              <span className="text-xs text-slate-400 flex-1 truncate">{dc.nameVi}</span>
-              <div className="w-20 flex items-center gap-1">
-                <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${dc.s1 >= 70 ? "bg-green-500" : "bg-yellow-500"}`} style={{ width: `${dc.s1}%` }} />
-                </div>
-                <span className="text-xs text-slate-300 w-8">{dc.s1}%</span>
-              </div>
-              <div className="w-20 flex items-center gap-1">
-                <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${dc.s2 >= 70 ? "bg-green-500" : "bg-yellow-500"}`} style={{ width: `${dc.s2}%` }} />
-                </div>
-                <span className="text-xs text-slate-300 w-8">{dc.s2}%</span>
-              </div>
-              <span className={`text-xs w-12 text-right ${dc.dDiff >= 0 ? "text-green-400" : "text-red-400"}`}>
-                {dc.dDiff >= 0 ? "+" : ""}{dc.dDiff}%
-              </span>
-            </div>
-          ))}
+        <div>
+          <label className="text-xs text-slate-400 block mb-1">Hệ thống 2</label>
+          <select
+            value={idx2}
+            onChange={(e) => setIdx2(Number(e.target.value))}
+            className="w-full bg-slate-800 text-slate-200 text-sm rounded-lg px-3 py-2 border border-slate-600 focus:border-cyan-500 focus:outline-none"
+          >
+            {files.map((f, i) => (
+              <option key={f.id} value={i}>{f.systemName} ({f.assessment.overallScore}%)</option>
+            ))}
+          </select>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {file1 && (
+          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+            <h3 className="text-sm font-semibold text-slate-200">{file1.systemName}</h3>
+            <p className="text-xs text-slate-500">{new Date(file1.updatedAt).toLocaleDateString("vi-VN")}</p>
+            <p className={`text-3xl font-bold mt-2 ${score1 >= 70 ? "text-green-400" : score1 >= 50 ? "text-yellow-400" : "text-red-400"}`}>
+              {score1}%
+            </p>
+          </div>
+        )}
+        {file2 && (
+          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+            <h3 className="text-sm font-semibold text-slate-200">{file2.systemName}</h3>
+            <p className="text-xs text-slate-500">{new Date(file2.updatedAt).toLocaleDateString("vi-VN")}</p>
+            <p className={`text-3xl font-bold mt-2 ${score2 >= 70 ? "text-green-400" : score2 >= 50 ? "text-yellow-400" : "text-red-400"}`}>
+              {score2}%
+            </p>
+          </div>
+        )}
+      </div>
+
+      {file1 && file2 && (
+        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+          <h3 className="text-sm font-semibold text-slate-200 mb-4">
+            So sánh {file1.systemName} vs {file2.systemName}
+          </h3>
+          <div className="flex items-center gap-4 mb-4 p-3 rounded-lg bg-slate-800">
+            <div>
+              <p className="text-xs text-slate-400">Thay đổi tổng thể</p>
+              <p className={`text-2xl font-bold ${diff >= 0 ? "text-green-400" : "text-red-400"}`}>
+                {diff >= 0 ? "+" : ""}{diff}%
+              </p>
+            </div>
+            <div className="flex-1">
+              <div className="h-4 bg-slate-700 rounded-full overflow-hidden relative">
+                <div className="absolute h-full bg-green-500/30 rounded-full" style={{ width: `${score1}%` }} />
+                <div className="absolute h-full bg-yellow-500/50 rounded-full border-r-2 border-yellow-400" style={{ width: `${score2}%` }} />
+              </div>
+              <div className="flex justify-between text-xs mt-1">
+                <span className="text-green-400">{file1.systemName}: {score1}%</span>
+                <span className="text-yellow-400">{file2.systemName}: {score2}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {domainComparisons.map((dc) => (
+              <div key={dc.id} className="flex items-center gap-2">
+                <span className="text-sm w-6">{dc.icon}</span>
+                <span className="text-xs text-slate-400 flex-1 truncate">{dc.nameVi}</span>
+                <div className="w-20 flex items-center gap-1">
+                  <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${dc.s1 >= 70 ? "bg-green-500" : dc.s1 >= 40 ? "bg-yellow-500" : "bg-red-500"}`} style={{ width: `${dc.s1}%` }} />
+                  </div>
+                  <span className="text-xs text-slate-300 w-8">{dc.s1}%</span>
+                </div>
+                <div className="w-20 flex items-center gap-1">
+                  <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${dc.s2 >= 70 ? "bg-green-500" : dc.s2 >= 40 ? "bg-yellow-500" : "bg-red-500"}`} style={{ width: `${dc.s2}%` }} />
+                  </div>
+                  <span className="text-xs text-slate-300 w-8">{dc.s2}%</span>
+                </div>
+                <span className={`text-xs w-12 text-right ${dc.dDiff >= 0 ? "text-green-400" : "text-red-400"}`}>
+                  {dc.dDiff >= 0 ? "+" : ""}{dc.dDiff}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

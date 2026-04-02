@@ -1,4 +1,4 @@
-import type { Assessment, AssessmentResult, SecurityCriterion, SecurityDomain } from "./types";
+import type { Assessment, AssessmentResult, SecurityCriterion, SecurityDomain, AssessmentFile } from "./types";
 import { CRITERIA } from "./data";
 
 function seededRandom(seed: number): number {
@@ -456,4 +456,81 @@ export function importAssessment(file: File): Promise<ImportResult> {
     reader.onerror = () => reject(new Error("Không thể đọc file"));
     reader.readAsText(file);
   });
+}
+
+export function createAssessmentFile(
+  systemName: string,
+  description: string,
+  tags: string[] = []
+): AssessmentFile {
+  const now = new Date().toISOString();
+  const id = `FILE-${Date.now()}`;
+  const assessment = generateSampleAssessment(CRITERIA);
+  assessment.id = `ASSESS-${Date.now()}`;
+  assessment.name = `Đánh giá ${systemName}`;
+  assessment.createdAt = now;
+  assessment.updatedAt = now;
+  assessment.domainScores = calculateDomainScores(assessment.results, CRITERIA, []);
+  assessment.overallScore = 0;
+  assessment.results = assessment.results.map((r) => ({
+    ...r,
+    score: 0 as 0,
+    status: "not-assessed" as const,
+    notes: "",
+    assessedAt: now,
+    assessedBy: "",
+  }));
+
+  return {
+    id,
+    name: `Đánh giá ${systemName}`,
+    systemName,
+    description,
+    createdAt: now,
+    updatedAt: now,
+    assessment,
+    status: "draft",
+    tags,
+  };
+}
+
+export function createAssessmentFileFromImport(
+  systemName: string,
+  description: string,
+  importedAssessment: Assessment,
+  tags: string[] = []
+): AssessmentFile {
+  const now = new Date().toISOString();
+  const id = `FILE-${Date.now()}`;
+
+  return {
+    id,
+    name: importedAssessment.name || `Đánh giá ${systemName}`,
+    systemName,
+    description,
+    createdAt: now,
+    updatedAt: now,
+    assessment: {
+      ...importedAssessment,
+      id: `ASSESS-${Date.now()}`,
+      updatedAt: now,
+    },
+    status: "in-progress",
+    tags,
+  };
+}
+
+export function updateAssessmentFileStatus(
+  file: AssessmentFile
+): AssessmentFile {
+  const assessed = file.assessment.results.filter((r) => r.status !== "not-assessed").length;
+  const total = file.assessment.results.length;
+  const pct = total > 0 ? (assessed / total) * 100 : 0;
+
+  let status: AssessmentFile["status"] = "draft";
+  if (pct === 0) status = "draft";
+  else if (pct < 100) status = "in-progress";
+  else status = "completed";
+
+  return { ...file, status, updatedAt: new Date().toISOString() };
 }

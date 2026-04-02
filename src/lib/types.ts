@@ -43,6 +43,18 @@ export interface Assessment {
   domainScores: Record<string, number>;
 }
 
+export interface AssessmentFile {
+  id: string;
+  name: string;
+  systemName: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  assessment: Assessment;
+  status: "draft" | "in-progress" | "completed" | "archived";
+  tags: string[];
+}
+
 export interface Threat {
   id: string;
   name: string;
@@ -93,6 +105,7 @@ export interface ExportFormat {
 export type TabId =
   | "overview"
   | "assessment"
+  | "files"
   | "import"
   | "compliance"
   | "threats"

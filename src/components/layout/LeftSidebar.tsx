@@ -14,6 +14,7 @@ interface LeftSidebarProps {
   selectedDomain: string;
   onDomainChange: (domainId: string) => void;
   assessment: Assessment;
+  activeFileName: string | null;
 }
 
 export function LeftSidebar({
@@ -24,6 +25,7 @@ export function LeftSidebar({
   selectedDomain,
   onDomainChange,
   assessment,
+  activeFileName,
 }: LeftSidebarProps) {
   const unreadCount = NOTIFICATIONS.filter((n) => !n.read).length;
   const criticalThreats = THREATS.filter((t) => t.severity === "critical").length;
@@ -47,7 +49,11 @@ export function LeftSidebar({
           <span className="text-2xl">🛡️</span>
           Security Audit
         </h1>
-        <p className="text-xs text-slate-400 mt-1">Hệ thống đánh giá bảo mật</p>
+        {activeFileName ? (
+          <p className="text-xs text-cyan-300 mt-1 truncate">📂 {activeFileName}</p>
+        ) : (
+          <p className="text-xs text-slate-400 mt-1">Hệ thống đánh giá bảo mật</p>
+        )}
       </div>
 
       <div className="p-3 border-b border-slate-700">
