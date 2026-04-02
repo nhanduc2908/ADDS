@@ -3,6 +3,7 @@ import type { SecurityDomain, SecurityCriterion, Tab, ExportFormat } from "./typ
 export const TABS: Tab[] = [
   { id: "overview", label: "Overview", labelVi: "Tổng quan", icon: "📊" },
   { id: "assessment", label: "Assessment", labelVi: "Đánh giá", icon: "🔍" },
+  { id: "import", label: "Import", labelVi: "Nhập dữ liệu", icon: "📥" },
   { id: "compliance", label: "Compliance", labelVi: "Tuân thủ", icon: "✅" },
   { id: "threats", label: "Threats", labelVi: "Mối đe dọa", icon: "⚠️" },
   { id: "training", label: "Training", labelVi: "Đào tạo", icon: "🎓" },

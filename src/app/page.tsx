@@ -9,6 +9,7 @@ import { LeftSidebar } from "@/components/layout/LeftSidebar";
 import { RightSidebar } from "@/components/layout/RightSidebar";
 import { OverviewTab } from "@/components/tabs/OverviewTab";
 import { AssessmentTab } from "@/components/tabs/AssessmentTab";
+import { ImportTab } from "@/components/tabs/ImportTab";
 import { ComplianceTab } from "@/components/tabs/ComplianceTab";
 import { ThreatsTab } from "@/components/tabs/ThreatsTab";
 import { TrainingTab } from "@/components/tabs/TrainingTab";
@@ -54,6 +55,16 @@ export default function SecurityDashboard() {
     [assessment]
   );
 
+  const handleImport = useCallback(
+    (imported: Assessment) => {
+      imported.domainScores = calculateDomainScores(imported.results, CRITERIA, DOMAINS);
+      imported.overallScore = calculateOverallScore(imported.results);
+      setAssessment(imported);
+      setActiveTab("overview");
+    },
+    []
+  );
+
   const renderTab = () => {
     switch (activeTab) {
       case "overview":
@@ -67,6 +78,8 @@ export default function SecurityDashboard() {
             onUpdateResult={handleUpdateResult}
           />
         );
+      case "import":
+        return <ImportTab onImport={handleImport} />;
       case "compliance":
         return <ComplianceTab />;
       case "threats":

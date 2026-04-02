@@ -93,6 +93,7 @@ export interface ExportFormat {
 export type TabId =
   | "overview"
   | "assessment"
+  | "import"
   | "compliance"
   | "threats"
   | "training"

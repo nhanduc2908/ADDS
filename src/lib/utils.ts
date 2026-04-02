@@ -251,3 +251,209 @@ export async function downloadExport(format: string, assessment?: Assessment): P
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+export interface ImportResult {
+  success: boolean;
+  assessment?: Assessment;
+  errors: string[];
+  imported: number;
+  skipped: number;
+}
+
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      inQuotes = !inQuotes;
+    } else if (ch === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+export function importFromJSON(text: string): ImportResult {
+  const errors: string[] = [];
+  try {
+    const data = JSON.parse(text);
+
+    if (data.results && Array.isArray(data.results)) {
+      const assessment: Assessment = {
+        id: data.id || `IMPORT-${Date.now()}`,
+        name: data.name || "Nhập từ file JSON",
+        createdAt: data.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        results: [],
+        overallScore: 0,
+        domainScores: {},
+      };
+
+      let imported = 0;
+      let skipped = 0;
+
+      for (const r of data.results) {
+        if (!r.criterionId) {
+          skipped++;
+          errors.push(`Bỏ qua dòng thiếu criterionId`);
+          continue;
+        }
+        const score = Math.min(5, Math.max(0, Number(r.score) || 0)) as 0 | 1 | 2 | 3 | 4 | 5;
+        const validStatuses = ["compliant", "partial", "non-compliant", "not-assessed"];
+        const status = validStatuses.includes(r.status) ? r.status :
+          score >= 4 ? "compliant" : score >= 2 ? "partial" : score >= 1 ? "non-compliant" : "not-assessed";
+
+        assessment.results.push({
+          criterionId: r.criterionId,
+          score,
+          status,
+          notes: r.notes || "",
+          assessedAt: r.assessedAt || new Date().toISOString(),
+          assessedBy: r.assessedBy || "Import",
+        });
+        imported++;
+      }
+
+      assessment.overallScore = calculateOverallScore(assessment.results);
+      assessment.domainScores = data.domainScores || {};
+
+      return { success: imported > 0, assessment, errors, imported, skipped };
+    }
+
+    if (Array.isArray(data)) {
+      const assessment: Assessment = {
+        id: `IMPORT-${Date.now()}`,
+        name: "Nhập từ JSON array",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        results: [],
+        overallScore: 0,
+        domainScores: {},
+      };
+
+      let imported = 0;
+      let skipped = 0;
+
+      for (const r of data) {
+        if (!r.criterionId && !r.id) {
+          skipped++;
+          continue;
+        }
+        const score = Math.min(5, Math.max(0, Number(r.score) || 0)) as 0 | 1 | 2 | 3 | 4 | 5;
+        assessment.results.push({
+          criterionId: r.criterionId || r.id,
+          score,
+          status: score >= 4 ? "compliant" : score >= 2 ? "partial" : "non-compliant",
+          notes: r.notes || "",
+          assessedAt: new Date().toISOString(),
+          assessedBy: "Import",
+        });
+        imported++;
+      }
+
+      assessment.overallScore = calculateOverallScore(assessment.results);
+      return { success: imported > 0, assessment, errors, imported, skipped };
+    }
+
+    errors.push("Định dạng JSON không hợp lệ. Cần { results: [...] } hoặc [...]");
+    return { success: false, errors, imported: 0, skipped: 0 };
+  } catch (e) {
+    errors.push(`Lỗi parse JSON: ${e instanceof Error ? e.message : "Unknown"}`);
+    return { success: false, errors, imported: 0, skipped: 0 };
+  }
+}
+
+export function importFromCSV(text: string): ImportResult {
+  const errors: string[] = [];
+  const lines = text.trim().split("\n");
+
+  if (lines.length < 2) {
+    errors.push("File CSV phải có ít nhất 1 dòng header và 1 dòng dữ liệu");
+    return { success: false, errors, imported: 0, skipped: 0 };
+  }
+
+  const header = parseCSVLine(lines[0]).map((h) => h.toLowerCase().replace(/[^a-z0-9_]/g, ""));
+  const idIdx = header.findIndex((h) => h === "id" || h === "criterionid" || h === "criterion_id" || h === "ma");
+  const scoreIdx = header.findIndex((h) => h === "score" || h === "diem");
+  const statusIdx = header.findIndex((h) => h === "status" || h === "trangthai" || h === "trang_thai");
+  const notesIdx = header.findIndex((h) => h === "notes" || h === "ghichu" || h === "ghi_chu");
+
+  if (idIdx === -1) {
+    errors.push("Không tìm thấy cột ID/criterionId/Ma trong header CSV");
+    return { success: false, errors, imported: 0, skipped: 0 };
+  }
+
+  const assessment: Assessment = {
+    id: `IMPORT-${Date.now()}`,
+    name: "Nhập từ CSV",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    results: [],
+    overallScore: 0,
+    domainScores: {},
+  };
+
+  let imported = 0;
+  let skipped = 0;
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    const cols = parseCSVLine(line);
+    const criterionId = cols[idIdx];
+
+    if (!criterionId) {
+      skipped++;
+      continue;
+    }
+
+    const rawScore = scoreIdx >= 0 ? Number(cols[scoreIdx]) : 0;
+    const score = Math.min(5, Math.max(0, rawScore || 0)) as 0 | 1 | 2 | 3 | 4 | 5;
+    const notes = notesIdx >= 0 ? cols[notesIdx] : "";
+
+    assessment.results.push({
+      criterionId,
+      score,
+      status: score >= 4 ? "compliant" : score >= 2 ? "partial" : score >= 1 ? "non-compliant" : "not-assessed",
+      notes,
+      assessedAt: new Date().toISOString(),
+      assessedBy: "Import",
+    });
+    imported++;
+  }
+
+  assessment.overallScore = calculateOverallScore(assessment.results);
+
+  return { success: imported > 0, assessment, errors, imported, skipped };
+}
+
+export function importAssessment(file: File): Promise<ImportResult> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (!text) {
+        resolve({ success: false, errors: ["File rỗng"], imported: 0, skipped: 0 });
+        return;
+      }
+
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      if (ext === "json") {
+        resolve(importFromJSON(text));
+      } else if (ext === "csv") {
+        resolve(importFromCSV(text));
+      } else {
+        resolve({ success: false, errors: [`Định dạng .${ext} không được hỗ trợ. Dùng JSON hoặc CSV`], imported: 0, skipped: 0 });
+      }
+    };
+    reader.onerror = () => reject(new Error("Không thể đọc file"));
+    reader.readAsText(file);
+  });
+}
