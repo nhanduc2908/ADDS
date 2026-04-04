@@ -9,6 +9,7 @@ import { LeftSidebar } from "@/components/layout/LeftSidebar";
 import { RightSidebar } from "@/components/layout/RightSidebar";
 import { OverviewTab } from "@/components/tabs/OverviewTab";
 import { AssessmentTab } from "@/components/tabs/AssessmentTab";
+import { ScannerTab } from "@/components/tabs/ScannerTab";
 import { FileManagerTab } from "@/components/tabs/FileManagerTab";
 import { ImportTab } from "@/components/tabs/ImportTab";
 import { ComplianceTab } from "@/components/tabs/ComplianceTab";
@@ -168,6 +169,8 @@ export default function SecurityDashboard() {
             onUpdateResult={handleUpdateResult}
           />
         );
+      case "scanner":
+        return <ScannerTab />;
       case "files":
         return (
           <FileManagerTab

@@ -106,6 +106,7 @@ export type TabId =
   | "overview"
   | "assessment"
   | "files"
+  | "scanner"
   | "import"
   | "compliance"
   | "threats"
@@ -122,4 +123,35 @@ export interface Tab {
   label: string;
   labelVi: string;
   icon: string;
+}
+
+export interface ScanCheck {
+  id: string;
+  name: string;
+  nameVi: string;
+  category: string;
+  categoryVi: string;
+  status: "pass" | "fail" | "warning" | "info" | "error";
+  severity: RiskLevel;
+  message: string;
+  messageVi: string;
+  details?: string;
+  recommendation?: string;
+}
+
+export interface ScanResult {
+  url: string;
+  scannedAt: string;
+  score: number;
+  grade: "A+" | "A" | "B" | "C" | "D" | "F";
+  checks: ScanCheck[];
+  summary: {
+    total: number;
+    passed: number;
+    failed: number;
+    warnings: number;
+    info: number;
+  };
+  responseTime: number;
+  statusCode: number;
 }
