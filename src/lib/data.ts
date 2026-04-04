@@ -24,6 +24,9 @@ export const EXPORT_FORMATS: ExportFormat[] = [
   { format: "txt", label: "Text", icon: "📝" },
   { format: "html", label: "HTML", icon: "🌐" },
   { format: "pdf", label: "PDF", icon: "📄" },
+  { format: "xml", label: "XML", icon: "🔧" },
+  { format: "md", label: "Markdown", icon: "📑" },
+  { format: "yaml", label: "YAML", icon: "⚙️" },
 ];
 
 export const DOMAINS: SecurityDomain[] = [

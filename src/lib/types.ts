@@ -97,7 +97,7 @@ export interface Notification {
 }
 
 export interface ExportFormat {
-  format: "json" | "csv" | "excel" | "txt" | "html" | "pdf";
+  format: "json" | "csv" | "excel" | "txt" | "html" | "pdf" | "xml" | "md" | "yaml";
   label: string;
   icon: string;
 }
