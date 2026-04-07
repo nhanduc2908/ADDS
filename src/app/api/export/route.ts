@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { CRITERIA, DOMAINS } from "@/lib/data";
-import { generateSampleAssessment, exportToJSON, exportToCSV, exportToTXT, exportToHTML } from "@/lib/utils";
+import { generateSampleAssessment, exportToJSON, exportToCSV, exportToTXT, exportToHTML, exportToXML, exportToMarkdown, exportToYAML } from "@/lib/utils";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -20,36 +20,64 @@ export async function GET(request: Request) {
   }
   assessment.domainScores = domainScores;
 
+  const contentTypes: Record<string, string> = {
+    json: "application/json",
+    csv: "text/csv",
+    excel: "text/csv",
+    txt: "text/plain",
+    html: "text/html",
+    pdf: "application/pdf",
+    xml: "application/xml",
+    md: "text/markdown",
+    yaml: "application/x-yaml",
+  };
+
+  const fileNames: Record<string, string> = {
+    json: "assessment.json",
+    csv: "assessment.csv",
+    excel: "assessment.csv",
+    txt: "assessment.txt",
+    html: "assessment.html",
+    pdf: "assessment.pdf",
+    xml: "assessment.xml",
+    md: "assessment.md",
+    yaml: "assessment.yaml",
+  };
+
+  let content: string;
+  let ext = format;
   switch (format) {
     case "json":
-      return new NextResponse(exportToJSON(assessment), {
-        headers: {
-          "Content-Type": "application/json",
-          "Content-Disposition": "attachment; filename=assessment.json",
-        },
-      });
+      content = exportToJSON(assessment);
+      break;
     case "csv":
-      return new NextResponse(exportToCSV(assessment, CRITERIA), {
-        headers: {
-          "Content-Type": "text/csv",
-          "Content-Disposition": "attachment; filename=assessment.csv",
-        },
-      });
+    case "excel":
+      content = exportToCSV(assessment, CRITERIA);
+      ext = "csv";
+      break;
     case "txt":
-      return new NextResponse(exportToTXT(assessment, CRITERIA), {
-        headers: {
-          "Content-Type": "text/plain",
-          "Content-Disposition": "attachment; filename=assessment.txt",
-        },
-      });
+      content = exportToTXT(assessment, CRITERIA);
+      break;
     case "html":
-      return new NextResponse(exportToHTML(assessment, CRITERIA), {
-        headers: {
-          "Content-Type": "text/html",
-          "Content-Disposition": "attachment; filename=assessment.html",
-        },
-      });
+      content = exportToHTML(assessment, CRITERIA);
+      break;
+    case "xml":
+      content = exportToXML(assessment, CRITERIA);
+      break;
+    case "md":
+      content = exportToMarkdown(assessment, CRITERIA);
+      break;
+    case "yaml":
+      content = exportToYAML(assessment, CRITERIA);
+      break;
     default:
-      return NextResponse.json({ error: "Unsupported format. Use: json, csv, txt, html" }, { status: 400 });
+      return NextResponse.json({ error: "Unsupported format. Use: json, csv, excel, txt, html, xml, md, yaml" }, { status: 400 });
   }
+
+  return new NextResponse(content, {
+    headers: {
+      "Content-Type": contentTypes[format] || "text/plain",
+      "Content-Disposition": `attachment; filename=${fileNames[format] || `assessment.${ext}`}`,
+    },
+  });
 }

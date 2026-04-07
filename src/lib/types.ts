@@ -102,6 +102,19 @@ export interface ExportFormat {
   icon: string;
 }
 
+export interface SecurityStandard {
+  id: string;
+  name: string;
+  nameVi: string;
+  shortName: string;
+  description: string;
+  descriptionVi: string;
+  version: string;
+  domainCount: number;
+  criteriaCount: number;
+  icon: string;
+}
+
 export type TabId =
   | "overview"
   | "assessment"
