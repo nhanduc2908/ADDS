@@ -174,6 +174,8 @@ export function ScannerTab() {
             </div>
           </div>
 
+          <ScoreBreakdown result={result} />
+
           {categories.map((cat) => {
             const catChecks = result.checks.filter((c) => c.categoryVi === cat);
             return (
@@ -296,6 +298,89 @@ function GradeInfo({ grade, range, desc, color }: { grade: string; range: string
       <span className={`text-lg font-bold w-8 ${color}`}>{grade}</span>
       <span className="text-xs text-slate-500 w-16">{range}</span>
       <span className="text-xs text-slate-400">{desc}</span>
+    </div>
+  );
+}
+
+function ScoreBreakdown({ result }: { result: ScanResult }) {
+  const criticalFails = result.checks.filter((c) => c.status === "fail" && c.severity === "critical").length;
+  const highFails = result.checks.filter((c) => c.status === "fail" && c.severity === "high").length;
+  const mediumFails = result.checks.filter((c) => c.status === "fail" && c.severity === "medium").length;
+  const lowFails = result.checks.filter((c) => c.status === "fail" && c.severity === "low").length;
+  const infoChecks = result.checks.filter((c) => c.status === "info").length;
+  
+  const severitySummary = [
+    { label: "Critical", count: criticalFails, color: "bg-red-500", text: "text-red-400" },
+    { label: "High", count: highFails, color: "bg-orange-500", text: "text-orange-400" },
+    { label: "Medium", count: mediumFails, color: "bg-yellow-500", text: "text-yellow-400" },
+    { label: "Low", count: lowFails, color: "bg-blue-500", text: "text-blue-400" },
+    { label: "Info", count: infoChecks, color: "bg-slate-500", text: "text-slate-400" },
+  ];
+
+  const failedChecks = result.checks.filter((c) => c.status === "fail");
+  const warningChecks = result.checks.filter((c) => c.status === "warning");
+
+  return (
+    <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+      <h3 className="text-sm font-semibold text-slate-200 mb-4">Chi tiết điểm đánh giá</h3>
+      
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+        {severitySummary.map((s) => (
+          <div key={s.label} className="text-center">
+            <div className={`w-10 h-10 mx-auto rounded-full ${s.color} flex items-center justify-center`}>
+              <span className="text-white font-bold">{s.count}</span>
+            </div>
+            <p className={`text-xs mt-1 ${s.text}`}>{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {failedChecks.length > 0 && (
+          <div className="bg-red-500/10 rounded-lg p-3 border border-red-500/20">
+            <h4 className="text-xs font-semibold text-red-400 mb-2">❌ Lỗi bảo mật ({failedChecks.length})</h4>
+            <div className="space-y-1.5 max-h-32 overflow-y-auto">
+              {failedChecks.map((c) => (
+                <div key={c.id} className="text-xs flex items-start gap-2">
+                  <span className={`shrink-0 px-1.5 py-0.5 rounded text-white ${
+                    c.severity === "critical" ? "bg-red-600" : 
+                    c.severity === "high" ? "bg-orange-600" : 
+                    c.severity === "medium" ? "bg-yellow-600" : "bg-blue-600"
+                  }`}>
+                    {c.severity[0].toUpperCase()}
+                  </span>
+                  <span className="text-slate-300">{c.nameVi}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {warningChecks.length > 0 && (
+          <div className="bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/20">
+            <h4 className="text-xs font-semibold text-yellow-400 mb-2">⚠️ Cảnh báo ({warningChecks.length})</h4>
+            <div className="space-y-1.5 max-h-32 overflow-y-auto">
+              {warningChecks.map((c) => (
+                <div key={c.id} className="text-xs flex items-start gap-2">
+                  <span className={`shrink-0 px-1.5 py-0.5 rounded text-white ${
+                    c.severity === "medium" ? "bg-yellow-600" : "bg-blue-600"
+                  }`}>
+                    {c.severity[0].toUpperCase()}
+                  </span>
+                  <span className="text-slate-300">{c.nameVi}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-slate-700">
+        <p className="text-xs text-slate-500">
+          <strong className="text-slate-400">Cách tính điểm:</strong> Điểm cơ sở = (passed × 100% + warnings × 50% + info × 30%) / total. 
+          Trừ điểm cho mỗi lỗi Critical (-15), High (-8), Medium (-3).
+        </p>
+      </div>
     </div>
   );
 }
