@@ -168,3 +168,37 @@ export interface ScanResult {
   responseTime: number;
   statusCode: number;
 }
+
+export interface Vulnerability {
+  id: string;
+  cveId: string;
+  title: string;
+  severity: RiskLevel;
+  cvss: number;
+  affectedAsset: string;
+  status: "open" | "in-progress" | "remediated" | "accepted";
+  discoveredAt: string;
+  dueDate: string;
+  assignedTo: string;
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  user: string;
+  ip: string;
+  timestamp: string;
+  status: "success" | "failure" | "warning";
+  details: string;
+}
+
+export interface ComplianceFramework {
+  id: string;
+  name: string;
+  status: "compliant" | "partial" | "in-progress" | "non-compliant";
+  lastAudit: string;
+  nextAudit: string;
+  score: number;
+  findings: number;
+  criticalFindings: number;
+}
