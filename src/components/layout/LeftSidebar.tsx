@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { TABS, DOMAINS, CRITERIA, EXPORT_FORMATS } from "@/lib/data";
-import { THREATS, NOTIFICATIONS } from "@/lib/sample-data";
+import { TABS, DOMAINS, CRITERIA, EXPORT_FORMATS, SECURITY_STANDARDS } from "@/lib/data";
+import { THREATS, NOTIFICATIONS, VULNERABILITIES, AUDIT_LOGS, COMPLIANCE_FRAMEWORKS } from "@/lib/sample-data";
 import { downloadExport } from "@/lib/utils";
 import type { Assessment, TabId } from "@/lib/types";
 
@@ -29,6 +29,10 @@ export function LeftSidebar({
 }: LeftSidebarProps) {
   const unreadCount = NOTIFICATIONS.filter((n) => !n.read).length;
   const criticalThreats = THREATS.filter((t) => t.severity === "critical").length;
+  const openVulnerabilities = VULNERABILITIES.filter((v) => v.status === "open").length;
+  const criticalVulnerabilities = VULNERABILITIES.filter((v) => v.severity === "critical").length;
+  const failedAudits = AUDIT_LOGS.filter((l) => l.status === "failure").length;
+  const complianceIssues = COMPLIANCE_FRAMEWORKS.filter((c) => c.status !== "compliant").length;
   const [exporting, setExporting] = useState<string | null>(null);
 
   const handleExport = async (format: string) => {
@@ -40,6 +44,10 @@ export function LeftSidebar({
     } finally {
       setExporting(null);
     }
+  };
+
+  const handleQuickAction = (action: TabId) => {
+    onTabChange(action);
   };
 
   return (
@@ -84,7 +92,67 @@ export function LeftSidebar({
         </select>
       </div>
 
-      <nav className="flex-1 p-2">
+      <div className="p-3 border-b border-slate-700">
+        <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Tình trạng hệ thống</p>
+        <div className="grid grid-cols-2 gap-2">
+          <QuickStat 
+            label="Lỗ hổng" 
+            value={openVulnerabilities} 
+            icon="🔴" 
+            color={openVulnerabilities > 0 ? "text-red-400" : "text-green-400"}
+            onClick={() => handleQuickAction("threats")}
+          />
+          <QuickStat 
+            label="Audit" 
+            value={failedAudits} 
+            icon="📋" 
+            color={failedAudits > 0 ? "text-orange-400" : "text-green-400"}
+            onClick={() => handleQuickAction("compliance")}
+          />
+          <QuickStat 
+            label="Tuân thủ" 
+            value={complianceIssues} 
+            icon="⚠️" 
+            color={complianceIssues > 0 ? "text-yellow-400" : "text-green-400"}
+            onClick={() => handleQuickAction("compliance")}
+          />
+          <QuickStat 
+            label="Thông báo" 
+            value={unreadCount} 
+            icon="🔔" 
+            color={unreadCount > 0 ? "text-cyan-400" : "text-slate-400"}
+            onClick={() => handleQuickAction("notifications")}
+          />
+        </div>
+      </div>
+
+      <div className="p-3 border-b border-slate-700">
+        <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Thao tác nhanh</p>
+        <div className="space-y-1">
+          <QuickActionButton 
+            label="Quét website" 
+            icon="🌐" 
+            onClick={() => handleQuickAction("scanner")}
+          />
+          <QuickActionButton 
+            label="Tạo đánh giá mới" 
+            icon="➕" 
+            onClick={() => handleQuickAction("files")}
+          />
+          <QuickActionButton 
+            label="Nhập dữ liệu" 
+            icon="📥" 
+            onClick={() => handleQuickAction("import")}
+          />
+          <QuickActionButton 
+            label="Xem báo cáo" 
+            icon="📊" 
+            onClick={() => handleQuickAction("reports")}
+          />
+        </div>
+      </div>
+
+      <nav className="flex-1 p-2 overflow-y-auto">
         <p className="text-xs text-slate-500 uppercase tracking-wider px-2 py-2">Chức năng</p>
         {TABS.map((tab) => (
           <button
@@ -115,7 +183,7 @@ export function LeftSidebar({
       <div className="p-3 border-t border-slate-700">
         <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Xuất báo cáo</p>
         <div className="grid grid-cols-3 gap-1">
-          {EXPORT_FORMATS.map((fmt) => (
+          {EXPORT_FORMATS.slice(0, 6).map((fmt) => (
             <button
               key={fmt.format}
               onClick={() => handleExport(fmt.format)}
@@ -129,6 +197,67 @@ export function LeftSidebar({
           ))}
         </div>
       </div>
+
+      <div className="p-3 border-t border-slate-700">
+        <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Tiêu chuẩn</p>
+        <div className="flex flex-wrap gap-1">
+          {SECURITY_STANDARDS.slice(0, 4).map((s) => (
+            <button
+              key={s.id}
+              onClick={() => onTabChange("compliance")}
+              className="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400"
+              title={s.nameVi}
+            >
+              {s.shortName}
+            </button>
+          ))}
+        </div>
+      </div>
     </aside>
+  );
+}
+
+function QuickStat({ 
+  label, 
+  value, 
+  icon, 
+  color, 
+  onClick 
+}: { 
+  label: string; 
+  value: number; 
+  icon: string; 
+  color: string;
+  onClick: () => void;
+}) {
+  return (
+    <button 
+      onClick={onClick}
+      className="flex items-center gap-1.5 p-2 rounded bg-slate-800 hover:bg-slate-700 transition-colors"
+    >
+      <span>{icon}</span>
+      <span className="text-xs text-slate-400">{label}</span>
+      <span className={`ml-auto text-sm font-bold ${color}`}>{value}</span>
+    </button>
+  );
+}
+
+function QuickActionButton({ 
+  label, 
+  icon, 
+  onClick 
+}: { 
+  label: string; 
+  icon: string; 
+  onClick: () => void;
+}) {
+  return (
+    <button 
+      onClick={onClick}
+      className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-300 transition-colors"
+    >
+      <span>{icon}</span>
+      <span>{label}</span>
+    </button>
   );
 }
