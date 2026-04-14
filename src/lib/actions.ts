@@ -20,7 +20,7 @@ export async function loginAction(formData: FormData) {
     return { error: result.error };
   }
 
-  redirect("/dashboard");
+  redirect("/security");
 }
 
 export async function logoutAction() {

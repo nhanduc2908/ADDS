@@ -39,7 +39,7 @@ export async function quickLoginAction(formData: FormData) {
       return { error: result.error };
     }
 
-    redirect("/dashboard");
+    redirect("/security");
   } catch (err) {
     console.error("Quick login error:", err);
     return { error: "Login failed. Please try again." };
