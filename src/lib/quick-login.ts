@@ -19,24 +19,29 @@ export async function quickLoginAction(formData: FormData) {
     return { error: "Invalid login type" };
   }
 
-  let [user] = await db.select().from(users).where(eq(users.email, demo.email));
-  
-  if (!user) {
-    const hashedPassword = await hashPassword(demo.password);
-    [user] = await db.insert(users).values({
-      email: demo.email,
-      password: hashedPassword,
-      name: demo.name,
-      role: demo.role,
-    }).returning();
-  }
+  try {
+    let [user] = await db.select().from(users).where(eq(users.email, demo.email));
+    
+    if (!user) {
+      const hashedPassword = await hashPassword(demo.password);
+      [user] = await db.insert(users).values({
+        email: demo.email,
+        password: hashedPassword,
+        name: demo.name,
+        role: demo.role,
+      }).returning();
+    }
 
-  const { login } = await import("@/lib/auth");
-  const result = await login(demo.email, demo.password);
-  
-  if (result.error) {
-    return { error: result.error };
-  }
+    const { login } = await import("@/lib/auth");
+    const result = await login(demo.email, demo.password);
+    
+    if (result.error) {
+      return { error: result.error };
+    }
 
-  redirect("/dashboard");
+    redirect("/dashboard");
+  } catch (err) {
+    console.error("Quick login error:", err);
+    return { error: "Login failed. Please try again." };
+  }
 }
