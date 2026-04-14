@@ -29,18 +29,24 @@ function createDefaultAssessment(): Assessment {
   return a;
 }
 
+const ASSESSED_COUNT = 87;
+
 function createDefaultFiles(): AssessmentFile[] {
   const systems = [
     { name: "Hệ thống ERP", desc: "Hệ thống hoạch định nguồn lực doanh nghiệp", tags: ["production", "critical"] },
     { name: "Website chính", desc: "Cổng thông tin điện tử công khai", tags: ["web", "external"] },
     { name: "Cơ sở dữ liệu khách hàng", desc: "Hệ thống CSDL chứa thông tin KH", tags: ["database", "pii"] },
   ];
-  return systems.map((s) => {
+  const fixedRandom = (seed: number) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
+  return systems.map((s, idx) => {
     const f = createAssessmentFile(s.name, s.desc, s.tags);
-    const assessed = Math.floor(Math.random() * 150);
+    const assessed = ASSESSED_COUNT + idx * 10;
     f.assessment.results = f.assessment.results.map((r, i) => {
       if (i < assessed) {
-        const score = Math.floor(Math.random() * 6) as 0 | 1 | 2 | 3 | 4 | 5;
+        const score = Math.floor(fixedRandom(i * 100 + idx) * 6) as 0 | 1 | 2 | 3 | 4 | 5;
         return {
           ...r,
           score,
