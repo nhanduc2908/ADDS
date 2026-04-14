@@ -6,6 +6,19 @@ import { users, hashPassword } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 
+function getRedirectPath(role: string): string {
+  switch (role) {
+    case "admin":
+      return "/admin/users";
+    case "manager":
+      return "/admin/users";
+    case "user":
+      return "/security";
+    default:
+      return "/security";
+  }
+}
+
 export async function loginAction(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -20,7 +33,9 @@ export async function loginAction(formData: FormData) {
     return { error: result.error };
   }
 
-  redirect("/security");
+  const [user] = await db.select().from(users).where(eq(users.email, email));
+  const redirectPath = getRedirectPath(user?.role || "user");
+  redirect(redirectPath);
 }
 
 export async function logoutAction() {

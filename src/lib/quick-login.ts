@@ -11,6 +11,19 @@ const DEMO_USERS = {
   user: { email: "user@example.com", password: "user123", role: "user" as const, name: "User" },
 };
 
+function getRedirectPath(role: string): string {
+  switch (role) {
+    case "admin":
+      return "/admin/users";
+    case "manager":
+      return "/admin/users";
+    case "user":
+      return "/security";
+    default:
+      return "/security";
+  }
+}
+
 export async function quickLoginAction(formData: FormData) {
   const type = formData.get("type") as keyof typeof DEMO_USERS;
   const demo = DEMO_USERS[type];
@@ -39,7 +52,8 @@ export async function quickLoginAction(formData: FormData) {
       return { error: result.error };
     }
 
-    redirect("/security");
+    const redirectPath = getRedirectPath(demo.role);
+    redirect(redirectPath);
   } catch (err) {
     console.error("Quick login error:", err);
     return { error: "Login failed. Please try again." };
