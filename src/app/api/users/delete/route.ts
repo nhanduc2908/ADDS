@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function DELETE(request: Request) {
   try {
-    await requireRole("manager", "admin");
-    const currentUser = await requireRole("manager", "admin");
+    const currentUser = await getSession();
+    
+    if (!currentUser || (currentUser.role !== "manager" && currentUser.role !== "admin")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const { searchParams } = new URL(request.url);
     const userId = parseInt(searchParams.get("id") || "");

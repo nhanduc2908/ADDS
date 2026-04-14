@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
-import { requireRole, type UserRole } from "@/lib/auth";
+import { getSession, type UserRole } from "@/lib/auth";
 import { db } from "@/db";
 import { users, hashPassword } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
   try {
-    await requireRole("manager", "admin");
+    const currentUser = await getSession();
+    
+    if (!currentUser || (currentUser.role !== "manager" && currentUser.role !== "admin")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    const currentUser = await requireRole("manager", "admin");
     const body = await request.json();
     const { name, email, password, role } = body;
 

@@ -1,11 +1,16 @@
-import { requireRole } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { logoutAction } from "@/lib/actions";
 import { CreateUserForm } from "@/components/auth/CreateUserForm";
+import { redirect } from "next/navigation";
 
 export default async function UsersManagementPage() {
-  const currentUser = await requireRole("manager", "admin");
+  const currentUser = await getSession();
+  
+  if (!currentUser || (currentUser.role !== "manager" && currentUser.role !== "admin")) {
+    redirect("/login");
+  }
 
   const allUsers = await db.select().from(users);
 

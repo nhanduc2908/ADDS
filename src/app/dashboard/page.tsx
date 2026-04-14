@@ -1,9 +1,22 @@
-import { getSession, requireRole } from "@/lib/auth";
-import { logoutAction } from "@/lib/actions";
-import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
 
 export default async function DashboardPage() {
-  const user = await requireRole("admin", "manager", "user");
+  const user = await getSession();
+  
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Bạn chưa đăng nhập</p>
+          <a href="/login" className="text-blue-600 hover:underline">
+            Đăng nhập
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  const { logoutAction } = await import("@/lib/actions");
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -28,16 +41,9 @@ export default async function DashboardPage() {
           <p className="text-gray-600">
             Vai trò của bạn: <span className="font-medium capitalize">{user.role}</span>
           </p>
-          {user.role === "manager" && (
+          {(user.role === "manager" || user.role === "admin") && (
             <div className="mt-4 p-4 bg-blue-50 rounded">
               <a href="/admin/users" className="text-blue-600 hover:underline">
-                Quản lý người dùng →
-              </a>
-            </div>
-          )}
-          {user.role === "admin" && (
-            <div className="mt-4 p-4 bg-green-50 rounded">
-              <a href="/admin/users" className="text-green-600 hover:underline">
                 Quản lý người dùng →
               </a>
             </div>
