@@ -16,9 +16,9 @@ const roleColors = {
 };
 
 const roleRedirects = {
-  admin: "/admin/users",
-  manager: "/admin/users",
-  user: "/security",
+  admin: "/dashboard",
+  manager: "/dashboard",
+  user: "/dashboard",
 };
 
 export default function LoginPage() {
