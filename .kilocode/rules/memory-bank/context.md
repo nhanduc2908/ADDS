@@ -4,7 +4,7 @@
 
 **Template Status**: ✅ Ready for development
 
-The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. It's ready for AI-assisted expansion to build any type of application.
+The template includes authentication with 3 roles: admin, manager, and user. Manager can create admin and user accounts.
 
 ## Recently Completed
 
@@ -14,6 +14,10 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] ESLint configuration
 - [x] Memory bank documentation
 - [x] Recipe system for common features
+- [x] Database with Drizzle ORM (SQLite)
+- [x] User authentication (login/logout with sessions)
+- [x] Role-based access control (admin/manager/user)
+- [x] User management pages (manager can create admin/user)
 
 ## Current Structure
 
@@ -23,6 +27,13 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 | `src/app/layout.tsx` | Root layout | ✅ Ready |
 | `src/app/globals.css` | Global styles | ✅ Ready |
 | `.kilocode/` | AI context & recipes | ✅ Ready |
+| `src/db/` | Database (Drizzle ORM) | ✅ Ready |
+| `src/lib/auth.ts` | Authentication functions | ✅ Ready |
+| `src/lib/actions.ts` | Server actions | ✅ Ready |
+| `src/app/login/` | Login page | ✅ Ready |
+| `src/app/dashboard/` | Dashboard page | ✅ Ready |
+| `src/app/admin/users/` | User management | ✅ Ready |
+| `src/app/api/users/` | User API endpoints | ✅ Ready |
 
 ## Current Focus
 
