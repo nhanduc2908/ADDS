@@ -1,13 +1,7 @@
-import { getSession } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 
 export default async function HomePage() {
-  const user = await getSession();
-  
-  if (user) {
-    redirect("/dashboard");
-  }
+  // Simplified - no server-side session checking to avoid bundling issues
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">

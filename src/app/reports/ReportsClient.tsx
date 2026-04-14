@@ -1,6 +1,8 @@
+"use client";
+
 import { useState } from "react";
 import Link from "next/link";
-import { logoutAction } from "@/lib/actions";
+import { clientLogout } from "@/lib/client-utils";
 
 const sampleReports = [
   { id: 1, name: "Báo cáo đánh giá Q1 2026", type: "Đánh giá bảo mật", date: "2026-03-31", status: "Hoàn thành" },
@@ -74,11 +76,12 @@ export default function ReportsClient({ user }: { user: { id: number; email: str
               {user.role.toUpperCase()}
             </span>
             <span className="text-slate-600 dark:text-slate-400">{user.name}</span>
-            <form action={logoutAction}>
-              <button className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm">
-                Đăng xuất
-              </button>
-            </form>
+            <button
+              onClick={clientLogout}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm"
+            >
+              Đăng xuất
+            </button>
           </div>
         </div>
       </header>

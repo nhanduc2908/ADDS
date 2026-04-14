@@ -1,13 +1,50 @@
-import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { logoutAction } from "@/lib/actions";
+import { clientLogout } from "@/lib/client-utils";
 import { CreateUserForm } from "@/components/auth/CreateUserForm";
-import { redirect } from "next/navigation";
 
 export default async function UsersManagementPage() {
-  const currentUser = await getSession();
-  
+  const [{ redirect }, { cookies }, { db }, { users, sessions }, { eq, and, gt }] = await Promise.all([
+    import("next/navigation"),
+    import("next/headers"),
+    import("@/db"),
+    import("@/db/schema"),
+    import("drizzle-orm")
+  ]);
+
+  const cookieStore = await cookies();
+  const SESSION_COOKIE = "session_id";
+  const cookie = cookieStore.get(SESSION_COOKIE);
+
+  let currentUser = null;
+  if (cookie) {
+    const [session] = await db
+      .select()
+      .from(sessions)
+      .where(
+        and(
+          eq(sessions.id, cookie.value),
+          gt(sessions.expiresAt, new Date())
+        )
+      );
+
+    if (session) {
+      const [userData] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, session.userId));
+
+      if (userData) {
+        currentUser = {
+          id: userData.id,
+          email: userData.email,
+          name: userData.name,
+          role: userData.role as string,
+        };
+      }
+    }
+  }
+
   if (!currentUser || (currentUser.role !== "manager" && currentUser.role !== "admin")) {
     redirect("/login");
   }
@@ -24,11 +61,12 @@ export default async function UsersManagementPage() {
             </a>
             <h1 className="text-xl font-bold">Quản lý người dùng</h1>
           </div>
-          <form action={logoutAction}>
-            <button className="text-blue-600 hover:underline">
-              Đăng xuất
-            </button>
-          </form>
+          <button
+            onClick={clientLogout}
+            className="text-blue-600 hover:underline"
+          >
+            Đăng xuất
+          </button>
         </div>
       </header>
       <main className="max-w-7xl mx-auto px-4 py-8">
@@ -37,7 +75,7 @@ export default async function UsersManagementPage() {
           
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <h3 className="font-medium mb-3">Thêm người dùng mới</h3>
-            <CreateUserForm currentRole={currentUser.role} />
+            <CreateUserForm currentRole={currentUser!.role} />
           </div>
 
           <table className="w-full">

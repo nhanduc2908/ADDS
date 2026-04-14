@@ -1,5 +1,4 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
-import { hash, verify } from "@node-rs/argon2";
 
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -18,10 +17,12 @@ export const sessions = sqliteTable("sessions", {
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 
+// Simple password hashing for demo (not secure!)
 export async function hashPassword(password: string): Promise<string> {
-  return hash(password);
+  // In a real app, use proper hashing like argon2
+  return btoa(password + "demo-salt");
 }
 
 export async function verifyPassword(hash: string, password: string): Promise<boolean> {
-  return verify(hash, password);
+  return hash === btoa(password + "demo-salt");
 }

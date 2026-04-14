@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { logoutAction } from "@/lib/actions";
+import { clientLogout } from "@/lib/client-utils";
 
 const systemSettings = {
   general: [
@@ -93,11 +93,12 @@ export default function SettingsClient({ user }: { user: { id: number; email: st
               {user.role.toUpperCase()}
             </span>
             <span className="text-slate-600 dark:text-slate-400">{user.name}</span>
-            <form action={logoutAction}>
-              <button className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm">
-                Đăng xuất
-              </button>
-            </form>
+            <button
+              onClick={clientLogout}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm"
+            >
+              Đăng xuất
+            </button>
           </div>
         </div>
       </header>

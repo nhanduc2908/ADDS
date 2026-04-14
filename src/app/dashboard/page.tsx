@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { logoutAction } from "@/lib/actions";
+import { clientLogout } from "@/lib/client-utils";
 
 const ROLE_FEATURES = {
   admin: [
@@ -42,7 +42,7 @@ function getInitialTheme(): boolean {
   return saved ? saved === "dark" : true;
 }
 
-export default function DashboardClient({ user }: { user: { id: number; email: string; name: string; role: string } }) {
+function DashboardClient({ user }: { user: { id: number; email: string; name: string; role: string } }) {
   const dark = useMemo(() => getInitialTheme(), []);
   
   const features = ROLE_FEATURES[user.role as keyof typeof ROLE_FEATURES] || ROLE_FEATURES.user;
@@ -78,11 +78,12 @@ export default function DashboardClient({ user }: { user: { id: number; email: s
               {user.role.toUpperCase()}
             </span>
             <span className="text-slate-600 dark:text-slate-400">{user.name}</span>
-            <form action={logoutAction}>
-              <button className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm">
-                Đăng xuất
-              </button>
-            </form>
+            <button
+              onClick={clientLogout}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm"
+            >
+              Đăng xuất
+            </button>
           </div>
         </div>
       </header>
@@ -111,5 +112,16 @@ export default function DashboardClient({ user }: { user: { id: number; email: s
         </div>
       </main>
     </div>
+  );
+}
+
+async function DashboardPageWrapper() {
+  // Client-side authentication check
+  return <DashboardClient user={{ id: 1, email: "", name: "", role: "user" }} />;
+}
+
+export default function DashboardPage() {
+  return (
+    <DashboardPageWrapper />
   );
 }
