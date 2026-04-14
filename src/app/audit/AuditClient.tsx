@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { getSession } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { logoutAction } from "@/lib/actions";
 
@@ -34,16 +32,11 @@ function getInitialTheme(): boolean {
   return saved ? saved === "dark" : true;
 }
 
-export default function AuditPage() {
-  const [user, setUser] = useState<{ id: number; email: string; name: string; role: string } | null>(null);
-  const [dark, setDark] = useState(true);
+export default function AuditClient({ user }: { user: { id: number; email: string; name: string; role: string } }) {
+  const [dark, setDark] = useState(getInitialTheme());
   const [search, setSearch] = useState("");
   const [filterAction, setFilterAction] = useState("all");
   const [filterRole, setFilterRole] = useState("all");
-
-  if (typeof window !== "undefined" && !user) {
-    getSession().then(setUser).catch(() => redirect("/login"));
-  }
 
   const handleToggleTheme = () => {
     const newDark = !dark;
@@ -73,8 +66,6 @@ export default function AuditPage() {
     if (action.includes("Xuất")) return "text-purple-500";
     return "text-slate-500";
   };
-
-  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">

@@ -33,7 +33,7 @@ export default function LoginPage() {
     } else {
       document.documentElement.classList.remove("dark");
     }
-  }, []);
+  }, [dark]);
 
   async function handleQuickLogin(email: string, password: string, role: string) {
     setLoading(role);
