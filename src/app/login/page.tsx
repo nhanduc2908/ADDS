@@ -1,7 +1,7 @@
 "use client";
 
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 const DEMO_USERS = [
   { email: "admin@example.com", password: "admin123", name: "Admin", role: "admin", label: "Đăng nhập Admin", color: "red" },
@@ -15,16 +15,25 @@ const roleColors = {
   user: "bg-green-600 hover:bg-green-700",
 };
 
-const roleRedirects = {
-  admin: "/dashboard",
-  manager: "/dashboard",
-  user: "/dashboard",
-};
+function getInitialTheme(): boolean {
+  if (typeof window === "undefined") return true;
+  const saved = localStorage.getItem("theme");
+  return saved ? saved === "dark" : true;
+}
 
 export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState("");
   const router = useRouter();
+  const dark = useMemo(() => getInitialTheme(), []);
+
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
 
   async function handleQuickLogin(email: string, password: string, role: string) {
     setLoading(role);
@@ -45,7 +54,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push(roleRedirects[role as keyof typeof roleRedirects]);
+      router.push("/dashboard");
       router.refresh();
     } catch (err) {
       setError("Lỗi đăng nhập. Vui lòng thử lại.");
@@ -75,7 +84,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push(roleRedirects[data.role as keyof typeof roleRedirects] || "/security");
+      router.push("/dashboard");
       router.refresh();
     } catch (err) {
       setError("Lỗi đăng nhập. Vui lòng thử lại.");
@@ -84,12 +93,29 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900">
-      <div className="bg-slate-800 p-8 rounded-lg shadow-xl w-96 border border-slate-700">
-        <h1 className="text-2xl font-bold mb-6 text-center text-white">Đăng nhập</h1>
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-900 transition-colors">
+      <button
+        onClick={() => {
+          const newDark = !dark;
+          localStorage.setItem("theme", newDark ? "dark" : "light");
+          if (newDark) {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
+          window.location.reload();
+        }}
+        className="fixed top-4 right-4 p-2 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition"
+        title={dark ? "Chế độ sáng" : "Chế độ tối"}
+      >
+        {dark ? "☀️" : "🌙"}
+      </button>
+
+      <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-xl w-96 border border-slate-200 dark:border-slate-700">
+        <h1 className="text-2xl font-bold mb-6 text-center text-slate-900 dark:text-white">Đăng nhập</h1>
         
         <div className="mb-6">
-          <p className="text-sm text-slate-400 mb-3 font-medium">Đăng nhập nhanh:</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 font-medium">Đăng nhập nhanh:</p>
           <div className="space-y-2">
             {DEMO_USERS.map((user) => (
               <button
@@ -104,32 +130,32 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="border-t border-slate-700 pt-6">
-          <p className="text-sm text-slate-400 mb-3">Đăng nhập bằng tài khoản:</p>
+        <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">Đăng nhập bằng tài khoản:</p>
           <form action={async (formData) => {
             await handleManualLogin(formData);
           }} className="space-y-4">
             {error && (
-              <div className="bg-red-900/50 text-red-300 p-2 rounded text-sm border border-red-800">
+              <div className="bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-300 p-2 rounded text-sm border border-red-200 dark:border-red-800">
                 {error}
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-300">Email</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Email</label>
               <input
                 type="email"
                 name="email"
                 required
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white"
+                className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-300">Mật khẩu</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Mật khẩu</label>
               <input
                 type="password"
                 name="password"
                 required
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white"
+                className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white"
               />
             </div>
             <button
