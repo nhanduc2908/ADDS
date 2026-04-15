@@ -6,9 +6,9 @@ import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 const DEMO_USERS = {
-  admin: { email: "admin@example.com", password: "admin123", role: "admin" as const, name: "Admin" },
-  manager: { email: "manager@example.com", password: "manager123", role: "manager" as const, name: "Manager" },
-  user: { email: "user@example.com", password: "user123", role: "user" as const, name: "User" },
+  admin: { email: "admin@security.vn", password: "admin2026", role: "admin" as const, name: "Nguyễn Văn Admin" },
+  manager: { email: "manager@security.vn", password: "manager2026", role: "manager" as const, name: "Trần Thị Manager" },
+  user: { email: "user@security.vn", password: "user2026", role: "user" as const, name: "Lê Minh User" },
 };
 
 function getRedirectPath(role: string): string {

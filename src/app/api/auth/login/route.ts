@@ -9,9 +9,9 @@ const SESSION_COOKIE = "session_id";
 const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000;
 
 const DEMO_ACCOUNTS: Record<string, { name: string; role: "admin" | "manager" | "user" }> = {
-  "admin@example.com": { name: "Admin", role: "admin" },
-  "manager@example.com": { name: "Manager", role: "manager" },
-  "user@example.com": { name: "User", role: "user" },
+  "admin@security.vn": { name: "Nguyễn Văn Admin", role: "admin" },
+  "manager@security.vn": { name: "Trần Thị Manager", role: "manager" },
+  "user@security.vn": { name: "Lê Minh User", role: "user" },
 };
 
 type UserRole = "admin" | "manager" | "user";

@@ -4,9 +4,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 const DEMO_USERS = [
-  { email: "admin@example.com", password: "admin123", name: "Admin", role: "admin", label: "Đăng nhập Admin", color: "red" },
-  { email: "manager@example.com", password: "manager123", name: "Manager", role: "manager", label: "Đăng nhập Manager", color: "yellow" },
-  { email: "user@example.com", password: "user123", name: "User", role: "user", label: "Đăng nhập User", color: "green" },
+  { email: "admin@security.vn", password: "admin2026", name: "Nguyễn Văn Admin", role: "admin", label: "Đăng nhập Admin", color: "red" },
+  { email: "manager@security.vn", password: "manager2026", name: "Trần Thị Manager", role: "manager", label: "Đăng nhập Manager", color: "yellow" },
+  { email: "user@security.vn", password: "user2026", name: "Lê Minh User", role: "user", label: "Đăng nhập User", color: "green" },
 ];
 
 const roleColors = {
