@@ -20,9 +20,9 @@ export async function POST(request: Request) {
     // In production, implement proper session validation
 
     const body = await request.json();
-    const { name, email, password, role } = body;
+    const { name, username, email, password, role } = body;
 
-    if (!name || !email || !password || !role) {
+    if (!name || !username || !email || !password || !role) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
@@ -30,14 +30,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
-    const existing = await db.select().from(users).where(eq(users.email, email));
-    if (existing.length > 0) {
+    const existingEmail = await db.select().from(users).where(eq(users.email, email));
+    if (existingEmail.length > 0) {
       return NextResponse.json({ error: "Email already exists" }, { status: 400 });
+    }
+
+    const existingUsername = await db.select().from(users).where(eq(users.username, username));
+    if (existingUsername.length > 0) {
+      return NextResponse.json({ error: "Username already exists" }, { status: 400 });
     }
 
     const hashedPassword = await hashPassword(password);
     const [newUser] = await db.insert(users).values({
       name,
+      username,
       email,
       password: hashedPassword,
       role: role as UserRole,

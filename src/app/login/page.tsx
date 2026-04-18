@@ -4,9 +4,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 const DEMO_USERS = [
-  { email: "admin@security.vn", password: "admin2026", name: "Nguyễn Văn Admin", role: "admin", label: "Đăng nhập Admin", color: "red" },
-  { email: "manager@security.vn", password: "manager2026", name: "Trần Thị Manager", role: "manager", label: "Đăng nhập Manager", color: "yellow" },
-  { email: "user@security.vn", password: "user2026", name: "Lê Minh User", role: "user", label: "Đăng nhập User", color: "green" },
+  { username: "admin", password: "admin2026", name: "Nguyễn Văn Admin", role: "admin", label: "Đăng nhập Admin", color: "red" },
+  { username: "manager", password: "manager2026", name: "Trần Thị Manager", role: "manager", label: "Đăng nhập Manager", color: "yellow" },
+  { username: "user", password: "user2026", name: "Lê Minh User", role: "user", label: "Đăng nhập User", color: "green" },
 ];
 
 const roleColors = {
@@ -35,7 +35,7 @@ export default function LoginPage() {
     }
   }, [dark]);
 
-  async function handleQuickLogin(email: string, password: string, role: string) {
+  async function handleQuickLogin(username: string, password: string, role: string) {
     setLoading(role);
     setError("");
 
@@ -43,7 +43,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await res.json();
@@ -68,7 +68,7 @@ export default function LoginPage() {
   }
 
   async function handleManualLogin(formData: FormData) {
-    const email = formData.get("email") as string;
+    const username = formData.get("username") as string;
     const password = formData.get("password") as string;
 
     setLoading("manual");
@@ -78,7 +78,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await res.json();
@@ -130,7 +130,7 @@ export default function LoginPage() {
             {DEMO_USERS.map((user) => (
               <button
                 key={user.role}
-                onClick={() => handleQuickLogin(user.email, user.password, user.role)}
+                onClick={() => handleQuickLogin(user.username, user.password, user.role)}
                 disabled={loading === user.role}
                 className={`w-full ${roleColors[user.role as keyof typeof roleColors]} text-white py-2 rounded-md text-sm font-medium disabled:opacity-50`}
               >
@@ -151,10 +151,10 @@ export default function LoginPage() {
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Email</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Tên đăng nhập</label>
               <input
-                type="email"
-                name="email"
+                type="text"
+                name="username"
                 required
                 className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white"
               />

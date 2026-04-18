@@ -19,7 +19,7 @@ export async function setupAdminAction(formData: FormData) {
 
   const adminPassword = await hashPassword("admin2026");
 
-  const existing = await db.select().from(users).where(eq(users.email, "admin@security.vn"));
+  const existing = await db.select().from(users).where(eq(users.username, "admin"));
 
   if (existing.length > 0) {
     return { error: "Admin already exists" };
@@ -27,6 +27,7 @@ export async function setupAdminAction(formData: FormData) {
 
   await db.insert(users).values({
     name: "Nguyễn Văn Admin",
+    username: "admin",
     email: "admin@security.vn",
     password: adminPassword,
     role: "admin",

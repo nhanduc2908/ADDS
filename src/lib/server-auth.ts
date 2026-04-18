@@ -13,13 +13,14 @@ export type UserRole = "admin" | "manager" | "user";
 
 export interface SessionUser {
   id: number;
+  username: string;
   email: string;
   name: string;
   role: UserRole;
 }
 
 export async function login(
-  email: string,
+  username: string,
   password: string
 ): Promise<{ error?: string }> {
   const db = getDb();
@@ -28,15 +29,15 @@ export async function login(
   const [user] = await db
     .select()
     .from(users)
-    .where(eq(users.email, email));
+    .where(eq(users.username, username));
 
   if (!user) {
-    return { error: "Invalid email or password" };
+    return { error: "Invalid username or password" };
   }
 
   const valid = await verifyPassword(user.password, password);
   if (!valid) {
-    return { error: "Invalid email or password" };
+    return { error: "Invalid username or password" };
   }
 
   const sessionId = randomBytes(32).toString("hex");
@@ -101,6 +102,7 @@ export async function getSession(): Promise<SessionUser | null> {
 
   return {
     id: user.id,
+    username: user.username,
     email: user.email,
     name: user.name,
     role: user.role as UserRole,

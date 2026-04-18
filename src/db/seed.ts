@@ -16,11 +16,12 @@ async function seed() {
   if (existing.length === 0) {
     await db.insert(users).values({
       name: "Nguyễn Văn Admin",
+      username: "admin",
       email: "admin@security.vn",
       password: adminPassword,
       role: "admin",
     });
-    console.log("Admin user created: admin@security.vn / admin2026");
+    console.log("Admin user created: admin / admin2026");
   } else {
     console.log("Admin user already exists");
   }

@@ -1,85 +1,28 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/db";
-import { users, sessions, hashPassword, verifyPassword } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { cookies } from "next/headers";
-import { randomBytes } from "crypto";
-
-const SESSION_COOKIE = "session_id";
-const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000;
-
-const DEMO_ACCOUNTS: Record<string, { name: string; role: "admin" | "manager" | "user" }> = {
-  "admin@security.vn": { name: "Nguyễn Văn Admin", role: "admin" },
-  "manager@security.vn": { name: "Trần Thị Manager", role: "manager" },
-  "user@security.vn": { name: "Lê Minh User", role: "user" },
-};
-
-type UserRole = "admin" | "manager" | "user";
+import { login, getSession } from "@/lib/server-auth";
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const { username, password } = await request.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email và mật khẩu là bắt buộc" }, { status: 400 });
+    if (!username || !password) {
+      return NextResponse.json({ error: "Tên đăng nhập và mật khẩu là bắt buộc" }, { status: 400 });
     }
 
-    let user: { id: number; name: string; role: UserRole; password: string } | null = null;
-    const demoInfo = DEMO_ACCOUNTS[email];
+    const result = await login(username, password);
 
-    const db = getDb();
-    if (!db) {
-      return NextResponse.json({ error: "Database not available" }, { status: 500 });
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 401 });
     }
 
-    if (demoInfo) {
-      let [existingUser] = await db.select().from(users).where(eq(users.email, email));
-
-      if (!existingUser) {
-        const hashedPassword = await hashPassword(password);
-        [existingUser] = await db.insert(users).values({
-          email,
-          password: hashedPassword,
-          name: demoInfo.name,
-          role: demoInfo.role,
-        }).returning();
-      }
-      user = existingUser;
-    } else {
-      const [existingUser] = await db.select().from(users).where(eq(users.email, email));
-      user = existingUser || null;
-    }
-
+    const user = await getSession();
     if (!user) {
-      return NextResponse.json({ error: "Email hoặc mật khẩu không đúng" }, { status: 401 });
+      return NextResponse.json({ error: "Đăng nhập thất bại" }, { status: 500 });
     }
-
-    const valid = await verifyPassword(user.password, password);
-    if (!valid) {
-      return NextResponse.json({ error: "Email hoặc mật khẩu không đúng" }, { status: 401 });
-    }
-
-    const sessionId = randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + SESSION_DURATION);
-
-    await db.insert(sessions).values({
-      id: sessionId,
-      userId: user.id,
-      expiresAt,
-    });
-
-    const cookieStore = await cookies();
-    cookieStore.set(SESSION_COOKIE, sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      expires: expiresAt,
-      path: "/",
-    });
 
     return NextResponse.json({
       success: true,
-      user: { id: user.id, email, name: user.name, role: user.role },
+      user: { id: user.id, username: user.username, email: user.email, name: user.name, role: user.role },
     });
   } catch (error) {
     console.error("Login error:", error);
