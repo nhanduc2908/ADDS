@@ -1,10 +1,9 @@
 "use server";
 
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { users, hashPassword } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
-import { cookies } from "next/headers";
 
 
 
@@ -20,18 +19,15 @@ export async function loginAction(formData: FormData) {
 }
 
 export async function logoutAction() {
-  const cookieStore = await cookies();
-  const SESSION_COOKIE = "session_id";
-  const cookie = cookieStore.get(SESSION_COOKIE);
-  if (cookie) {
-    // Note: We can't delete sessions from DB here since we don't want to import db
-    // The session will expire naturally
-  }
-  cookieStore.delete(SESSION_COOKIE);
   redirect("/login");
 }
 
 export async function createUserAction(formData: FormData) {
+  const db = getDb();
+  if (!db) {
+    return { error: "Database not available" };
+  }
+
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -62,6 +58,11 @@ export async function createUserAction(formData: FormData) {
 }
 
 export async function deleteUserAction(userId: number) {
+  const db = getDb();
+  if (!db) {
+    return { error: "Database not available" };
+  }
+
   const [targetUser] = await db.select().from(users).where(eq(users.id, userId));
 
   if (!targetUser) {

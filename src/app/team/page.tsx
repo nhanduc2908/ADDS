@@ -1,16 +1,16 @@
 import { redirect } from "next/navigation";
-import SettingsClient from "./SettingsClient";
+import TeamClient from "./TeamClient";
 
-export default async function SettingsPage() {
+export default async function TeamPage() {
   const [{ getServerSession }] = await Promise.all([
     import("@/lib/server-session")
   ]);
 
   const user = await getServerSession();
 
-  if (!user) {
+  if (!user || user.role !== "manager") {
     redirect("/login");
   }
 
-  return <SettingsClient user={user} />;
+  return <TeamClient user={user} />;
 }

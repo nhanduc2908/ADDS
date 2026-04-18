@@ -1,13 +1,18 @@
 "use server";
 
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { users, hashPassword } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 export async function setupAdminAction(formData: FormData) {
+  const db = getDb();
+  if (!db) {
+    return { error: "Database not available" };
+  }
+
   const key = formData.get("key") as string;
-  
+
   if (key !== "setup-admin-2024") {
     return { error: "Invalid setup key" };
   }

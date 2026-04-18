@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function DELETE(request: Request) {
   try {
+    const db = getDb();
+    if (!db) {
+      return NextResponse.json({ error: "Database not available" }, { status: 500 });
+    }
+
     // For demo purposes, allow all authenticated users to delete users
     // In production, implement proper session validation and role checks
 
@@ -23,7 +28,6 @@ export async function DELETE(request: Request) {
     }
 
     // Role restrictions removed for demo
-
     await db.delete(users).where(eq(users.id, userId));
 
     return NextResponse.json({ success: true });

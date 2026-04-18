@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { users, sessions, hashPassword, verifyPassword } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
@@ -27,9 +27,14 @@ export async function POST(request: Request) {
     let user: { id: number; name: string; role: UserRole; password: string } | null = null;
     const demoInfo = DEMO_ACCOUNTS[email];
 
+    const db = getDb();
+    if (!db) {
+      return NextResponse.json({ error: "Database not available" }, { status: 500 });
+    }
+
     if (demoInfo) {
       let [existingUser] = await db.select().from(users).where(eq(users.email, email));
-      
+
       if (!existingUser) {
         const hashedPassword = await hashPassword(password);
         [existingUser] = await db.insert(users).values({

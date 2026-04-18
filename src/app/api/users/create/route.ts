@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 type UserRole = "admin" | "manager" | "user";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { users, hashPassword } from "@/db/schema";
 import { eq, and, gt } from "drizzle-orm";
 import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
   try {
+    const db = getDb();
+    if (!db) {
+      return NextResponse.json({ error: "Database not available" }, { status: 500 });
+    }
+
     const cookieStore = await cookies();
     const SESSION_COOKIE = "session_id";
     const cookie = cookieStore.get(SESSION_COOKIE);
@@ -24,8 +29,6 @@ export async function POST(request: Request) {
     if (!["admin", "manager", "user"].includes(role)) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
-
-    // Role restrictions removed for demo
 
     const existing = await db.select().from(users).where(eq(users.email, email));
     if (existing.length > 0) {

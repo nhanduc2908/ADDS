@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { users, hashPassword } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
@@ -25,16 +25,21 @@ function getRedirectPath(role: string): string {
 }
 
 export async function quickLoginAction(formData: FormData) {
+  const db = getDb();
+  if (!db) {
+    return { error: "Database not available" };
+  }
+
   const type = formData.get("type") as keyof typeof DEMO_USERS;
   const demo = DEMO_USERS[type];
-  
+
   if (!demo) {
     return { error: "Invalid login type" };
   }
 
   try {
     let [user] = await db.select().from(users).where(eq(users.email, demo.email));
-    
+
     if (!user) {
       const hashedPassword = await hashPassword(demo.password);
       [user] = await db.insert(users).values({
@@ -45,15 +50,7 @@ export async function quickLoginAction(formData: FormData) {
       }).returning();
     }
 
-    const { login } = await import("@/lib/auth");
-    const result = await login(demo.email, demo.password);
-    
-    if (result.error) {
-      return { error: result.error };
-    }
-
-    const redirectPath = getRedirectPath(demo.role);
-    redirect(redirectPath);
+    redirect("/dashboard");
   } catch (err) {
     console.error("Quick login error:", err);
     return { error: "Login failed. Please try again." };

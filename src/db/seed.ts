@@ -1,8 +1,14 @@
-import { db } from "./index";
+import { getDb } from "./index";
 import { users, hashPassword } from "./schema";
 import { eq } from "drizzle-orm";
 
 async function seed() {
+  const db = getDb();
+  if (!db) {
+    console.error("Database not available for seeding");
+    return;
+  }
+
   const adminPassword = await hashPassword("admin2026");
 
   const existing = await db.select().from(users).where(eq(users.email, "admin@security.vn"));

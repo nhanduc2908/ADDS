@@ -1,5 +1,5 @@
 // Server-only auth functions
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { users, sessions } from "@/db/schema";
 import { verifyPassword } from "@/db/schema";
 import { eq, and, gt } from "drizzle-orm";
@@ -22,6 +22,9 @@ export async function login(
   email: string,
   password: string
 ): Promise<{ error?: string }> {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+
   const [user] = await db
     .select()
     .from(users)
@@ -58,9 +61,10 @@ export async function login(
 }
 
 export async function logout(): Promise<void> {
+  const db = getDb();
   const cookieStore = await cookies();
   const cookie = cookieStore.get(SESSION_COOKIE);
-  if (cookie) {
+  if (cookie && db) {
     await db
       .delete(sessions)
       .where(eq(sessions.id, cookie.value));
@@ -69,6 +73,9 @@ export async function logout(): Promise<void> {
 }
 
 export async function getSession(): Promise<SessionUser | null> {
+  const db = getDb();
+  if (!db) return null;
+
   const cookieStore = await cookies();
   const cookie = cookieStore.get(SESSION_COOKIE);
   if (!cookie) return null;

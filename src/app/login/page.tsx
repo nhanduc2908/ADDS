@@ -54,7 +54,12 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      // Redirect based on role
+      if (data.user?.role === "admin" || data.user?.role === "manager") {
+        router.push("/admin/users");
+      } else {
+        router.push("/dashboard");
+      }
       router.refresh();
     } catch (err) {
       setError("Lỗi đăng nhập. Vui lòng thử lại.");
@@ -84,7 +89,12 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      // Redirect based on role
+      if (data.user?.role === "admin" || data.user?.role === "manager") {
+        router.push("/admin/users");
+      } else {
+        router.push("/dashboard");
+      }
       router.refresh();
     } catch (err) {
       setError("Lỗi đăng nhập. Vui lòng thử lại.");

@@ -1,4 +1,9 @@
 import { runMigrations } from "@kilocode/app-builder-db";
-import { db } from "./index";
+import { getDb } from "./index";
 
-await runMigrations(db, {}, { migrationsFolder: "./src/db/migrations" });
+const db = getDb();
+if (db) {
+  await runMigrations(db, {}, { migrationsFolder: "./src/db/migrations" });
+} else {
+  console.error("Database not available for migration");
+}

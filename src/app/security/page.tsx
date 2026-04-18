@@ -2,46 +2,12 @@ import { clientLogout } from "@/lib/client-utils";
 import SecurityDashboardClient from "./SecurityDashboardClient";
 
 export default async function SecurityPage() {
-  const [{ redirect }, { cookies }, { db }, { users, sessions }, { eq, and, gt }] = await Promise.all([
+  const [{ redirect }, { getServerSession }] = await Promise.all([
     import("next/navigation"),
-    import("next/headers"),
-    import("@/db"),
-    import("@/db/schema"),
-    import("drizzle-orm")
+    import("@/lib/server-session")
   ]);
 
-  const cookieStore = await cookies();
-  const SESSION_COOKIE = "session_id";
-  const cookie = cookieStore.get(SESSION_COOKIE);
-
-  let user = null;
-  if (cookie) {
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(
-        and(
-          eq(sessions.id, cookie.value),
-          gt(sessions.expiresAt, new Date())
-        )
-      );
-
-    if (session) {
-      const [userData] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, session.userId));
-
-      if (userData) {
-        user = {
-          id: userData.id,
-          email: userData.email,
-          name: userData.name,
-          role: userData.role as string,
-        };
-      }
-    }
-  }
+  const user = await getServerSession();
 
   if (!user) {
     redirect("/login");

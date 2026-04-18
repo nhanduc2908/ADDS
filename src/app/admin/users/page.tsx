@@ -1,49 +1,20 @@
-import { db } from "@/db";
-import { users } from "@/db/schema";
 import { clientLogout } from "@/lib/client-utils";
 import { CreateUserForm } from "@/components/auth/CreateUserForm";
 
 export default async function UsersManagementPage() {
-  const [{ redirect }, { cookies }, { db }, { users, sessions }, { eq, and, gt }] = await Promise.all([
+  const [{ redirect }, { getServerSession }, { getDb }, { users }] = await Promise.all([
     import("next/navigation"),
-    import("next/headers"),
+    import("@/lib/server-session"),
     import("@/db"),
-    import("@/db/schema"),
-    import("drizzle-orm")
+    import("@/db/schema")
   ]);
 
-  const cookieStore = await cookies();
-  const SESSION_COOKIE = "session_id";
-  const cookie = cookieStore.get(SESSION_COOKIE);
-
-  let currentUser = null;
-  if (cookie) {
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(
-        and(
-          eq(sessions.id, cookie.value),
-          gt(sessions.expiresAt, new Date())
-        )
-      );
-
-    if (session) {
-      const [userData] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, session.userId));
-
-      if (userData) {
-        currentUser = {
-          id: userData.id,
-          email: userData.email,
-          name: userData.name,
-          role: userData.role as string,
-        };
-      }
-    }
+  const db = getDb();
+  if (!db) {
+    throw new Error("Database not available");
   }
+
+  const currentUser = await getServerSession();
 
   if (!currentUser || (currentUser.role !== "manager" && currentUser.role !== "admin")) {
     redirect("/login");
